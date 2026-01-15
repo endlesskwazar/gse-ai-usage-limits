@@ -1,0 +1,28 @@
+.progress-label {
+    font-size: 24px;
+    font-weight: bold;
+    color: #ffffff;
+}
+
+.tab-button {
+    background-color: transparent;
+    border-radius: 99px;
+    padding: 8px 16px;
+    color: #eeeeee;
+}
+
+.tab-button:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+}
+
+.tab-button:checked {
+    background-color: rgba(255, 255, 255, 0.2);
+    font-weight: bold;
+    color: #ffffff;
+}
+
+.usage-label {
+    font-size: 16px;
+    padding-top: 12px;
+    color: #cccccc;
+}

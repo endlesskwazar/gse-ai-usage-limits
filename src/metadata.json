@@ -1,0 +1,8 @@
+{
+  "name": "AI Usage Limits Hello World",
+  "description": "A simple hello world extension for GNOME 49",
+  "uuid": "hello-world@gse-ai-usage-limits.local",
+  "shell-version": [ "49" ],
+  "version": 1,
+  "settings-schema": "org.gnome.shell.extensions.ai-usage-limits"
+}
