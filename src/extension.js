@@ -13,8 +13,8 @@ const CircularProgress = GObject.registerClass(
 class CircularProgress extends St.Widget {
     _init(percentage, labelText) {
         super._init({
-            width: 200,
-            height: 200,
+            width: 135,
+            height: 135,
             x_align: Clutter.ActorAlign.CENTER,
             y_align: Clutter.ActorAlign.CENTER,
             layout_manager: new Clutter.BinLayout()
@@ -25,8 +25,8 @@ class CircularProgress extends St.Widget {
 
         // Create a drawing area
         this._drawingArea = new St.DrawingArea({
-            width: 200,
-            height: 200,
+            width: 135,
+            height: 135,
             x_expand: true,
             y_expand: true
         });
@@ -65,6 +65,10 @@ class CircularProgress extends St.Widget {
             x_align: Clutter.ActorAlign.CENTER,
             y_align: Clutter.ActorAlign.CENTER,
         });
+
+        if (this._labelText) {
+            label.style = 'font-size: 14px;';
+        }
         
         this.add_child(label);
     }
@@ -91,7 +95,7 @@ export default class AIUsageExtension extends Extension {
         // Main container inside the menu
         this._mainLayout = new St.BoxLayout({
             vertical: true,
-            width: 320,
+            width: 216,
             style_class: 'popup-menu-content'
         });
 
@@ -183,12 +187,24 @@ export default class AIUsageExtension extends Extension {
             return;
         }
 
-        let loadingLabel = new St.Label({
-            text: 'Loading...', 
-            style_class: 'loading-label',
+        // Skeleton / Loading State
+        let progressWidget = new CircularProgress(0, 'Loading...');
+        this._contentArea.add_child(progressWidget);
+
+        let detailsBox = new St.BoxLayout({
+            vertical: true,
+            style: 'padding-top: 10px; spacing: 4px;',
             x_align: Clutter.ActorAlign.CENTER
         });
-        this._contentArea.add_child(loadingLabel);
+
+        // Reserve space for text (2 lines)
+        detailsBox.add_child(new St.Label({ text: ' ' }));
+        detailsBox.add_child(new St.Label({ 
+            text: ' ',
+            style: 'font-size: 0.85em; opacity: 0.7;'
+        }));
+
+        this._contentArea.add_child(detailsBox);
 
         // Perform async request
         const session = new Soup.Session();
