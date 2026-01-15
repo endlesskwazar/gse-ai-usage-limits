@@ -1,6 +1,7 @@
 import Clutter from 'gi://Clutter';
 import GObject from 'gi://GObject';
 import St from 'gi://St';
+import Gio from 'gi://Gio';
 import Cairo from 'gi://cairo';
 import Soup from 'gi://Soup';
 import GLib from 'gi://GLib';
@@ -83,20 +84,60 @@ export default class AIUsageExtension extends Extension {
 
         // Icon/Text on the panel
         let panelBox = new St.BoxLayout();
-        let label = new St.Label({
-            text: 'AI Limits',
-            y_align: Clutter.ActorAlign.CENTER
+        
+        let iconPath = this.dir.get_child('icons').get_child('ai-limit-symbolic.svg');
+        let gicon = new Gio.FileIcon({ file: iconPath });
+        
+        let icon = new St.Icon({
+            gicon: gicon,
+            style_class: 'system-status-icon'
         });
-        panelBox.add_child(label);
+        panelBox.add_child(icon);
         this._indicator.add_child(panelBox);
+
+        // --- Context Menu (Right Click) ---
+        this._contextMenu = new PopupMenu.PopupMenu(this._indicator, 0.0, St.Side.TOP);
+        Main.layoutManager.uiGroup.add_child(this._contextMenu.actor);
+        this._contextMenu.actor.hide();
+
+        // Add a menu manager to handle auto-closing
+        this._menuManager = new PopupMenu.PopupMenuManager(this._indicator);
+        this._menuManager.addMenu(this._contextMenu);
+
+        let settingsItem = new PopupMenu.PopupMenuItem('Settings');
+        settingsItem.connect('activate', () => {
+            this.openPreferences();
+        });
+        this._contextMenu.addMenuItem(settingsItem);
+
+        let closeItem = new PopupMenu.PopupMenuItem('Close Extension');
+        closeItem.connect('activate', () => {
+            Main.extensionManager.disableExtension(this.uuid);
+        });
+        this._contextMenu.addMenuItem(closeItem);
+
+        // Handle Clicks
+        this._indicator.connect('button-press-event', (actor, event) => {
+            const button = event.get_button();
+            if (button === Clutter.BUTTON_SECONDARY) {
+                // Right click: Toggle Context Menu
+                this._contextMenu.toggle();
+                this._indicator.menu.close(); // Ensure main menu is closed
+                return Clutter.EVENT_STOP;
+            } else if (button === Clutter.BUTTON_PRIMARY) {
+                // Left click: Close context menu
+                this._contextMenu.close();
+                return Clutter.EVENT_PROPAGATE;
+            }
+            return Clutter.EVENT_PROPAGATE;
+        });
 
         // --- Tabs Interface ---
         
         // Main container inside the menu
         this._mainLayout = new St.BoxLayout({
             vertical: true,
-            width: 216,
-            style_class: 'popup-menu-content'
+            width: 216
         });
 
         // Tab Bar (Buttons)
@@ -296,6 +337,13 @@ export default class AIUsageExtension extends Extension {
     }
 
     disable() {
+        if (this._menuManager) {
+            this._menuManager = null;
+        }
+        if (this._contextMenu) {
+            this._contextMenu.destroy();
+            this._contextMenu = null;
+        }
         if (this._indicator) {
             this._indicator.destroy();
             this._indicator = null;
