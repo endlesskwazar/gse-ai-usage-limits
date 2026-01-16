@@ -51,10 +51,12 @@ export default class AIUsagePreferences extends ExtensionPreferences {
                 activatable: true
             });
 
-            actionRow.add_suffix(new Gtk.Image({
-                icon_name: 'go-next-symbolic',
-                pixel_size: 16
-            }));
+            actionRow.add_suffix(
+                new Gtk.Image({
+                    icon_name: 'go-next-symbolic',
+                    pixel_size: 16
+                })
+            );
 
             actionRow.connect('activated', () => {
                 const dialog = this._createProviderDialog(window, settings, provider);
@@ -95,27 +97,12 @@ export default class AIUsagePreferences extends ExtensionPreferences {
             });
             group.add(dailyToggleRow);
 
-            settings.bind(
-                provider.dailyToggleKey,
-                dailyToggleRow,
-                'active',
-                Gio.SettingsBindFlags.DEFAULT
-            );
+            settings.bind(provider.dailyToggleKey, dailyToggleRow, 'active', Gio.SettingsBindFlags.DEFAULT);
         }
 
-        settings.bind(
-            provider.settingKey,
-            apiKeyRow,
-            'text',
-            Gio.SettingsBindFlags.DEFAULT
-        );
+        settings.bind(provider.settingKey, apiKeyRow, 'text', Gio.SettingsBindFlags.DEFAULT);
 
-        settings.bind(
-            provider.enabledKey,
-            enabledRow,
-            'active',
-            Gio.SettingsBindFlags.DEFAULT
-        );
+        settings.bind(provider.enabledKey, enabledRow, 'active', Gio.SettingsBindFlags.DEFAULT);
 
         return dialog;
     }

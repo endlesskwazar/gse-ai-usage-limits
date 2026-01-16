@@ -1,7 +1,6 @@
 import Clutter from 'gi://Clutter';
 import GObject from 'gi://GObject';
 import St from 'gi://St';
-import Gio from 'gi://Gio';
 import Cairo from 'gi://cairo';
 import Soup from 'gi://Soup';
 import GLib from 'gi://GLib';
@@ -16,7 +15,7 @@ const PROVIDERS = {
         settingKey: 'synthetic-api-key',
         enabledKey: 'synthetic-enabled',
         url: 'https://api.synthetic.new/v2/quotas',
-        parse: (data) => {
+        parse: data => {
             if (data.subscription) {
                 return {
                     limit: data.subscription.limit,
@@ -24,7 +23,7 @@ const PROVIDERS = {
                     renewsAt: data.subscription.renewsAt
                 };
             }
-            throw new Error("Invalid format");
+            throw new Error('Invalid format');
         }
     },
     chutes: {
@@ -32,9 +31,9 @@ const PROVIDERS = {
         settingKey: 'chutes-api-key',
         enabledKey: 'chutes-enabled',
         url: 'https://api.chutes.ai/users/me/quota_usage/me',
-        parse: (data) => {
+        parse: data => {
             console.log(`[AI-Usage] Chutes response: ${JSON.stringify(data)}`);
-            
+
             const limit = data.quota || 0;
             const used = data.used || 0;
 
@@ -60,10 +59,10 @@ const PROVIDERS = {
             if (settings) {
                 showDaily = settings.get_boolean('nano-gpt-show-daily-limit');
             }
-            
+
             // Fallback if data structure is unexpected
             if (!data.limits || !data.daily || !data.monthly) {
-                 throw new Error("Invalid format");
+                throw new Error('Invalid format');
             }
 
             const target = showDaily ? data.daily : data.monthly;
@@ -79,73 +78,74 @@ const PROVIDERS = {
 };
 
 const CircularProgress = GObject.registerClass(
-class CircularProgress extends St.Widget {
-    _init(percentage, labelText) {
-        super._init({
-            width: 110,
-            height: 110,
-            x_expand: false,
-            y_expand: false,
-            x_align: Clutter.ActorAlign.CENTER,
-            y_align: Clutter.ActorAlign.CENTER,
-            layout_manager: new Clutter.BinLayout()
-        });
-        
-        this._percentage = Math.min(Math.max(percentage, 0), 1); // Clamp between 0 and 1
-        this._labelText = labelText;
+    class CircularProgress extends St.Widget {
+        _init(percentage, labelText) {
+            super._init({
+                width: 110,
+                height: 110,
+                x_expand: false,
+                y_expand: false,
+                x_align: Clutter.ActorAlign.CENTER,
+                y_align: Clutter.ActorAlign.CENTER,
+                layout_manager: new Clutter.BinLayout()
+            });
 
-        // Create a drawing area
-        this._drawingArea = new St.DrawingArea({
-            width: 110,
-            height: 110,
-            x_expand: false,
-            y_expand: false,
-            x_align: Clutter.ActorAlign.CENTER,
-            y_align: Clutter.ActorAlign.CENTER
-        });
+            this._percentage = Math.min(Math.max(percentage, 0), 1); // Clamp between 0 and 1
+            this._labelText = labelText;
 
-        this._drawingArea.connect('repaint', (area) => {
-            let cr = area.get_context();
-            let [width, height] = area.get_surface_size();
-            let centerX = width / 2;
-            let centerY = height / 2;
-            let radius = Math.min(width, height) / 2 - 10;
-            let startAngle = -Math.PI / 2;
-            let endAngle = startAngle + (2 * Math.PI * this._percentage);
+            // Create a drawing area
+            this._drawingArea = new St.DrawingArea({
+                width: 110,
+                height: 110,
+                x_expand: false,
+                y_expand: false,
+                x_align: Clutter.ActorAlign.CENTER,
+                y_align: Clutter.ActorAlign.CENTER
+            });
 
-            // Background circle (Grey)
-            cr.setSourceRGBA(0.3, 0.3, 0.3, 0.5);
-            cr.setLineWidth(10);
-            cr.arc(centerX, centerY, radius, 0, 2 * Math.PI);
-            cr.stroke();
+            this._drawingArea.connect('repaint', area => {
+                let cr = area.get_context();
+                let [width, height] = area.get_surface_size();
+                let centerX = width / 2;
+                let centerY = height / 2;
+                let radius = Math.min(width, height) / 2 - 10;
+                let startAngle = -Math.PI / 2;
+                let endAngle = startAngle + 2 * Math.PI * this._percentage;
 
-            // Progress arc (Green)
-            if (this._percentage > 0) {
-                cr.setSourceRGBA(0.2, 0.8, 0.2, 1);
+                // Background circle (Grey)
+                cr.setSourceRGBA(0.3, 0.3, 0.3, 0.5);
                 cr.setLineWidth(10);
-                cr.setLineCap(Cairo.LineCap.ROUND);
-                cr.arc(centerX, centerY, radius, startAngle, endAngle);
+                cr.arc(centerX, centerY, radius, 0, 2 * Math.PI);
                 cr.stroke();
+
+                // Progress arc (Green)
+                if (this._percentage > 0) {
+                    cr.setSourceRGBA(0.2, 0.8, 0.2, 1);
+                    cr.setLineWidth(10);
+                    cr.setLineCap(Cairo.LineCap.ROUND);
+                    cr.arc(centerX, centerY, radius, startAngle, endAngle);
+                    cr.stroke();
+                }
+            });
+
+            this.add_child(this._drawingArea);
+
+            // Overlay label
+            let label = new St.Label({
+                text: this._labelText || `${Math.round(this._percentage * 100)}%`,
+                style_class: 'ai-usage-progress-label',
+                x_align: Clutter.ActorAlign.CENTER,
+                y_align: Clutter.ActorAlign.CENTER
+            });
+
+            if (this._labelText) {
+                label.style = 'font-size: 12px;';
             }
-        });
 
-        this.add_child(this._drawingArea);
-
-        // Overlay label
-        let label = new St.Label({
-            text: this._labelText || `${Math.round(this._percentage * 100)}%`,
-            style_class: 'ai-usage-progress-label',
-            x_align: Clutter.ActorAlign.CENTER,
-            y_align: Clutter.ActorAlign.CENTER,
-        });
-
-        if (this._labelText) {
-            label.style = 'font-size: 12px;';
+            this.add_child(label);
         }
-        
-        this.add_child(label);
     }
-});
+);
 
 export default class AIUsageExtension extends Extension {
     enable() {
@@ -157,7 +157,7 @@ export default class AIUsageExtension extends Extension {
 
         // Icon/Text on the panel
         let panelBox = new St.BoxLayout();
-        
+
         let icon = new St.Icon({
             icon_name: 'thunderbolt-symbolic',
             style_class: 'system-status-icon'
@@ -203,7 +203,7 @@ export default class AIUsageExtension extends Extension {
         });
 
         // --- Interface ---
-        
+
         // Main container inside the menu
         this._mainLayout = new St.BoxLayout({
             vertical: true,
@@ -224,10 +224,12 @@ export default class AIUsageExtension extends Extension {
             y_align: Clutter.ActorAlign.CENTER,
             x_align: Clutter.ActorAlign.CENTER
         });
-        refreshBtn.set_child(new St.Icon({
-            icon_name: 'view-refresh-symbolic',
-            style_class: 'popup-menu-icon'
-        }));
+        refreshBtn.set_child(
+            new St.Icon({
+                icon_name: 'view-refresh-symbolic',
+                style_class: 'popup-menu-icon'
+            })
+        );
         refreshBtn.connect('clicked', () => {
             this._loadQuota(this._currentProviderKey);
         });
@@ -246,18 +248,18 @@ export default class AIUsageExtension extends Extension {
             x_expand: true,
             y_align: Clutter.ActorAlign.CENTER
         });
-        
+
         // Layout for Provider Button: [ Label (Expand) ... Icon ]
         let providerBtnLayout = new St.BoxLayout({
             x_expand: true
         });
-        
+
         this._providerLabel = new St.Label({
             text: '', // Set on init
             y_align: Clutter.ActorAlign.CENTER,
             x_expand: true
         });
-        
+
         let arrowIcon = new St.Icon({
             icon_name: 'pan-down-symbolic',
             style_class: 'popup-menu-icon'
@@ -278,34 +280,34 @@ export default class AIUsageExtension extends Extension {
                 }
             }
         });
-        
+
         // Dropdown Area (Hidden by default)
         this._dropdownBox = new St.BoxLayout({
             vertical: true,
             visible: false,
             style_class: 'ai-usage-dropdown-box'
         });
-        
+
         this._providerItems = {};
         this._providers.forEach(key => {
-             let itemBtn = new St.Button({
+            let itemBtn = new St.Button({
                 style_class: 'ai-usage-dropdown-item',
                 x_align: Clutter.ActorAlign.FILL,
                 x_expand: true,
                 can_focus: true
-             });
-             let itemLabel = new St.Label({
+            });
+            let itemLabel = new St.Label({
                 text: PROVIDERS[key].name,
                 x_align: Clutter.ActorAlign.START
-             });
-             itemBtn.set_child(itemLabel);
-             
-             itemBtn.connect('clicked', () => {
-                 this._selectProvider(key);
-                 this._providerBtn.remove_style_class_name('ai-usage-provider-button-open');
-             });
-             this._dropdownBox.add_child(itemBtn);
-             this._providerItems[key] = itemBtn;
+            });
+            itemBtn.set_child(itemLabel);
+
+            itemBtn.connect('clicked', () => {
+                this._selectProvider(key);
+                this._providerBtn.remove_style_class_name('ai-usage-provider-button-open');
+            });
+            this._dropdownBox.add_child(itemBtn);
+            this._providerItems[key] = itemBtn;
         });
 
         this._providerContainer.add_child(this._providerBtn);
@@ -344,13 +346,13 @@ export default class AIUsageExtension extends Extension {
 
         // If current provider is not set (e.g. first run or invalid), select the first active one
         if (!this._currentProviderKey || !this._isProviderActive(this._currentProviderKey)) {
-             const firstActive = this._providers.find(k => this._isProviderActive(k));
-             if (firstActive) {
-                 this._selectProvider(firstActive);
-             } else {
-                 // No active providers
-                 this._showNoProvidersMessage();
-             }
+            const firstActive = this._providers.find(k => this._isProviderActive(k));
+            if (firstActive) {
+                this._selectProvider(firstActive);
+            } else {
+                // No active providers
+                this._showNoProvidersMessage();
+            }
         } else {
             // Just refresh current
             this._selectProvider(this._currentProviderKey);
@@ -372,7 +374,7 @@ export default class AIUsageExtension extends Extension {
             if (this._providerItems[key]) {
                 const isActive = this._isProviderActive(key);
                 // Visible in dropdown if it is active AND it is NOT the currently selected provider
-                this._providerItems[key].visible = isActive && (key !== this._currentProviderKey);
+                this._providerItems[key].visible = isActive && key !== this._currentProviderKey;
             }
         });
 
@@ -450,10 +452,10 @@ export default class AIUsageExtension extends Extension {
         if (!provider) return;
 
         const apiKey = this._settings.get_string(provider.settingKey);
-        
+
         // Clear Content immediately
         if (this._contentArea) {
-             this._contentArea.destroy_all_children();
+            this._contentArea.destroy_all_children();
         }
 
         if (!apiKey) {
@@ -481,10 +483,12 @@ export default class AIUsageExtension extends Extension {
 
         // Reserve space for text (2 lines)
         detailsBox.add_child(new St.Label({ text: ' ' }));
-        detailsBox.add_child(new St.Label({ 
-            text: ' ',
-            style: 'font-size: 0.85em; opacity: 0.7;'
-        }));
+        detailsBox.add_child(
+            new St.Label({
+                text: ' ',
+                style: 'font-size: 0.85em; opacity: 0.7;'
+            })
+        );
 
         this._contentArea.add_child(detailsBox);
 
@@ -492,7 +496,7 @@ export default class AIUsageExtension extends Extension {
         const session = new Soup.Session();
         const message = Soup.Message.new('GET', provider.url);
         message.request_headers.append('Authorization', `Bearer ${apiKey}`);
-        
+
         session.send_and_read_async(message, GLib.PRIORITY_DEFAULT, null, (session, result) => {
             if (!this._indicator) return; // Extension disabled/destroyed
 
@@ -501,9 +505,9 @@ export default class AIUsageExtension extends Extension {
                 this._contentArea.destroy_all_children();
 
                 const bytes = session.send_and_read_finish(result);
-                
+
                 if (message.status_code !== 200) {
-                     let errLabel = new St.Label({
+                    let errLabel = new St.Label({
                         text: `Error: HTTP ${message.status_code}`,
                         style: 'color: red;',
                         x_align: Clutter.ActorAlign.CENTER
@@ -546,21 +550,24 @@ export default class AIUsageExtension extends Extension {
                     x_align: Clutter.ActorAlign.CENTER
                 });
 
-                detailsBox.add_child(new St.Label({
-                    text: `Used: ${requests} / ${limit}`,
-                    x_align: Clutter.ActorAlign.CENTER
-                }));
+                detailsBox.add_child(
+                    new St.Label({
+                        text: `Used: ${requests} / ${limit}`,
+                        x_align: Clutter.ActorAlign.CENTER
+                    })
+                );
 
                 if (renewsStr) {
-                    detailsBox.add_child(new St.Label({
-                        text: `Renews in: ${renewsStr}`,
-                        style: 'font-size: 0.85em; opacity: 0.7;',
-                        x_align: Clutter.ActorAlign.CENTER
-                    }));
+                    detailsBox.add_child(
+                        new St.Label({
+                            text: `Renews in: ${renewsStr}`,
+                            style: 'font-size: 0.85em; opacity: 0.7;',
+                            x_align: Clutter.ActorAlign.CENTER
+                        })
+                    );
                 }
 
                 this._contentArea.add_child(detailsBox);
-
             } catch (e) {
                 // Determine if this._contentArea is still valid to write to
                 if (this._contentArea && this._contentArea.get_parent()) {
@@ -582,7 +589,7 @@ export default class AIUsageExtension extends Extension {
             this._settings.disconnect(this._settingsSignalId);
             this._settingsSignalId = null;
         }
-        
+
         if (this._indicator && this._indicator.menu && this._menuOpenSignalId) {
             this._indicator.menu.disconnect(this._menuOpenSignalId);
             this._menuOpenSignalId = null;
