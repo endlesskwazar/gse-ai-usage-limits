@@ -46,6 +46,32 @@ const PROVIDERS = {
                 renewsAt: nextReset.toISOString()
             };
         }
+    },
+    nanogpt: {
+        name: 'Nano-GPT',
+        settingKey: 'nano-gpt-api-key',
+        url: 'https://nano-gpt.com/api/subscription/v1/usage',
+        parse: (data, settings) => {
+            // Check user preference for tracking mode
+            let showDaily = true;
+            if (settings) {
+                showDaily = settings.get_boolean('nano-gpt-show-daily-limit');
+            }
+            
+            // Fallback if data structure is unexpected
+            if (!data.limits || !data.daily || !data.monthly) {
+                 throw new Error("Invalid format");
+            }
+
+            const target = showDaily ? data.daily : data.monthly;
+            const limit = (showDaily ? data.limits.daily : data.limits.monthly) || 0;
+
+            return {
+                limit: limit,
+                used: target.used,
+                renewsAt: target.resetAt
+            };
+        }
     }
 };
 
@@ -370,7 +396,7 @@ export default class AIUsageExtension extends Extension {
                 const responseBody = decoder.decode(bytes.get_data());
                 const data = JSON.parse(responseBody);
 
-                const parsedData = provider.parse(data);
+                const parsedData = provider.parse(data, this._settings);
                 const limit = parsedData.limit;
                 const requests = parsedData.used;
                 const renewsAt = parsedData.renewsAt;

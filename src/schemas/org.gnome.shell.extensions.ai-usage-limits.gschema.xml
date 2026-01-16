@@ -11,5 +11,15 @@
       <summary>Chutes.ai API Key</summary>
       <description>The API key for the Chutes.ai service.</description>
     </key>
+    <key name="nano-gpt-api-key" type="s">
+      <default>""</default>
+      <summary>Nano-GPT API Key</summary>
+      <description>The API key for the Nano-GPT service.</description>
+    </key>
+    <key name="nano-gpt-show-daily-limit" type="b">
+      <default>true</default>
+      <summary>Show Daily Limit for Nano-GPT</summary>
+      <description>If true, shows the daily limit (2000). If false, shows the monthly limit (60000).</description>
+    </key>
   </schema>
 </schemalist>

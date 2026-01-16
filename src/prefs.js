@@ -80,6 +80,40 @@ class AIUsagePreferences extends GObject.Object {
             'text',
             Gio.SettingsBindFlags.DEFAULT
         );
+
+        // Nano-GPT Group
+        const nanoGptGroup = new Adw.PreferencesGroup({
+            title: 'Nano-GPT',
+            description: 'Configure your Nano-GPT access'
+        });
+
+        const nanoGptApiKeyRow = new Adw.PasswordEntryRow({
+            title: 'API Key'
+        });
+
+        nanoGptGroup.add(nanoGptApiKeyRow);
+
+        const nanoGptLimitRow = new Adw.SwitchRow({
+            title: 'Show Daily Limit',
+            subtitle: 'Toggle to switch between Daily (2000) and Monthly (60000) limits'
+        });
+        
+        nanoGptGroup.add(nanoGptLimitRow);
+        page.add(nanoGptGroup);
+
+        settings.bind(
+            'nano-gpt-api-key',
+            nanoGptApiKeyRow,
+            'text',
+            Gio.SettingsBindFlags.DEFAULT
+        );
+
+        settings.bind(
+            'nano-gpt-show-daily-limit',
+            nanoGptLimitRow,
+            'active',
+            Gio.SettingsBindFlags.DEFAULT
+        );
     }
 });
 
