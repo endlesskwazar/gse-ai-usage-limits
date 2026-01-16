@@ -10,6 +10,45 @@ import * as Main from 'resource:///org/gnome/shell/ui/main.js';
 import * as PanelMenu from 'resource:///org/gnome/shell/ui/panelMenu.js';
 import * as PopupMenu from 'resource:///org/gnome/shell/ui/popupMenu.js';
 
+const PROVIDERS = {
+    synthetic: {
+        name: 'Synthetic',
+        settingKey: 'synthetic-api-key',
+        url: 'https://api.synthetic.new/v2/quotas',
+        parse: (data) => {
+            if (data.subscription) {
+                return {
+                    limit: data.subscription.limit,
+                    used: data.subscription.requests,
+                    renewsAt: data.subscription.renewsAt
+                };
+            }
+            throw new Error("Invalid format");
+        }
+    },
+    chutes: {
+        name: 'Chutes.ai',
+        settingKey: 'chutes-api-key',
+        url: 'https://api.chutes.ai/users/me/quota_usage/me',
+        parse: (data) => {
+            console.log(`[AI-Usage] Chutes response: ${JSON.stringify(data)}`);
+            
+            const limit = data.quota || 0;
+            const used = data.used || 0;
+
+            // Calculate next 00:00 UTC
+            const now = new Date();
+            const nextReset = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() + 1));
+
+            return {
+                limit: limit,
+                used: used,
+                renewsAt: nextReset.toISOString()
+            };
+        }
+    }
+};
+
 const CircularProgress = GObject.registerClass(
 class CircularProgress extends St.Widget {
     _init(percentage, labelText) {
@@ -132,53 +171,52 @@ export default class AIUsageExtension extends Extension {
             return Clutter.EVENT_PROPAGATE;
         });
 
-        // --- Tabs Interface ---
+        // --- Interface ---
         
         // Main container inside the menu
         this._mainLayout = new St.BoxLayout({
             vertical: true,
-            width: 216
+            style_class: 'main-container'
         });
 
         // Tab Bar (Buttons)
         this._tabBar = new St.BoxLayout({
             vertical: false,
             x_align: Clutter.ActorAlign.CENTER,
-            style: 'padding: 12px; spacing: 8px;'
+            style: 'padding: 4px 0px; spacing: 4px;'
         });
 
         // Content Area
         this._contentArea = new St.BoxLayout({
             vertical: true,
             x_align: Clutter.ActorAlign.CENTER,
-            style: 'padding-bottom: 24px;'
+            style: 'padding-bottom: 12px;'
         });
 
-        // Only Synthetic tab remains
-        this._tabs = [
-            { name: 'Synthetic', type: 'dynamic' }
-        ];
+        this._providers = Object.keys(PROVIDERS);
+        
+        if (this._providers.length > 0) {
+            this._providers.forEach((providerKey, index) => {
+                let provider = PROVIDERS[providerKey];
+                let btn = new St.Button({
+                    label: provider.name,
+                    style_class: 'tab-button',
+                    can_focus: true,
+                    toggle_mode: true
+                });
 
-        this._tabs.forEach((tabData, index) => {
-            let btn = new St.Button({
-                label: tabData.name,
-                style_class: 'tab-button',
-                can_focus: true,
-                toggle_mode: true,
-                x_expand: true
+                btn.connect('clicked', () => {
+                    this._switchTab(btn, providerKey);
+                });
+
+                this._tabBar.add_child(btn);
+                
+                // Activate first tab by default
+                if (index === 0) {
+                    this._switchTab(btn, providerKey);
+                }
             });
-
-            btn.connect('clicked', () => {
-                this._switchTab(btn, tabData);
-            });
-
-            this._tabBar.add_child(btn);
-            
-            // Activate first tab by default
-            if (index === 0) {
-                this._switchTab(btn, tabData);
-            }
-        });
+        }
 
         this._mainLayout.add_child(this._tabBar);
         this._mainLayout.add_child(this._contentArea);
@@ -189,7 +227,7 @@ export default class AIUsageExtension extends Extension {
         Main.panel.addToStatusArea(this.uuid, this._indicator);
     }
 
-    _switchTab(activeBtn, tabData) {
+    _switchTab(activeBtn, providerKey) {
         // Update button states
         this._tabBar.get_children().forEach(child => {
             child.checked = (child === activeBtn);
@@ -198,24 +236,14 @@ export default class AIUsageExtension extends Extension {
         // Clear Content
         this._contentArea.destroy_all_children();
 
-        if (tabData.type === 'dynamic' && tabData.name === 'Synthetic') {
-            this._loadSyntheticQuota();
-        } else {
-            // Static Tabs (This block is technically unused now, but kept for potential future use)
-            let progressWidget = new CircularProgress(tabData.percentage);
-            this._contentArea.add_child(progressWidget);
-            
-            let infoLabel = new St.Label({
-                text: `${tabData.name} Usage Limit`,
-                style_class: 'usage-label',
-                x_align: Clutter.ActorAlign.CENTER
-            });
-            this._contentArea.add_child(infoLabel);
-        }
+        this._loadQuota(providerKey);
     }
 
-    _loadSyntheticQuota() {
-        const apiKey = this._settings.get_string('api-key');
+    _loadQuota(providerKey) {
+        const provider = PROVIDERS[providerKey];
+        if (!provider) return;
+
+        const apiKey = this._settings.get_string(provider.settingKey);
         
         if (!apiKey) {
             let errorLabel = new St.Label({
@@ -234,7 +262,7 @@ export default class AIUsageExtension extends Extension {
 
         let detailsBox = new St.BoxLayout({
             vertical: true,
-            style: 'padding-top: 10px; spacing: 4px;',
+            style: 'padding-top: 6px; spacing: 4px;',
             x_align: Clutter.ActorAlign.CENTER
         });
 
@@ -249,7 +277,7 @@ export default class AIUsageExtension extends Extension {
 
         // Perform async request
         const session = new Soup.Session();
-        const message = Soup.Message.new('GET', 'https://api.synthetic.new/v2/quotas');
+        const message = Soup.Message.new('GET', provider.url);
         message.request_headers.append('Authorization', `Bearer ${apiKey}`);
         
         session.send_and_read_async(message, GLib.PRIORITY_DEFAULT, null, (session, result) => {
@@ -275,50 +303,50 @@ export default class AIUsageExtension extends Extension {
                 const responseBody = decoder.decode(bytes.get_data());
                 const data = JSON.parse(responseBody);
 
-                if (data.subscription) {
-                    const limit = data.subscription.limit;
-                    const requests = data.subscription.requests;
-                    
-                    const renewsDate = new Date(data.subscription.renewsAt);
+                const parsedData = provider.parse(data);
+                const limit = parsedData.limit;
+                const requests = parsedData.used;
+                const renewsAt = parsedData.renewsAt;
+
+                let renewsStr = '';
+                if (renewsAt) {
+                    const renewsDate = new Date(renewsAt);
                     const diffMs = renewsDate - new Date();
                     const diffHrs = Math.floor(diffMs / (1000 * 60 * 60));
                     const diffMins = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
-                    const renews = diffMs > 0 ? `${diffHrs}h ${diffMins}m` : 'Now';
+                    renewsStr = diffMs > 0 ? `${diffHrs}h ${diffMins}m` : 'Now';
+                }
 
-                    let percentage = 0;
-                    if (limit > 0) {
-                        percentage = requests / limit;
-                    }
+                let percentage = 0;
+                if (limit > 0) {
+                    percentage = requests / limit;
+                }
 
-                    // Display Progress
-                    let progressWidget = new CircularProgress(percentage);
-                    this._contentArea.add_child(progressWidget);
+                // Display Progress
+                let progressWidget = new CircularProgress(percentage);
+                this._contentArea.add_child(progressWidget);
 
-                    // Display Details
-                    let detailsBox = new St.BoxLayout({
-                        vertical: true,
-                        style: 'padding-top: 10px; spacing: 4px;',
-                        x_align: Clutter.ActorAlign.CENTER
-                    });
+                // Display Details
+                let detailsBox = new St.BoxLayout({
+                    vertical: true,
+                    style: 'padding-top: 6px; spacing: 4px;',
+                    x_align: Clutter.ActorAlign.CENTER
+                });
 
+                detailsBox.add_child(new St.Label({
+                    text: `Used: ${requests} / ${limit}`,
+                    x_align: Clutter.ActorAlign.CENTER
+                }));
+
+                if (renewsStr) {
                     detailsBox.add_child(new St.Label({
-                        text: `Used: ${requests} / ${limit}`,
+                        text: `Renews in: ${renewsStr}`,
+                        style: 'font-size: 0.85em; opacity: 0.7;',
                         x_align: Clutter.ActorAlign.CENTER
                     }));
-
-                    if (requests > 0) {
-                        detailsBox.add_child(new St.Label({
-                            text: `Renews in: ${renews}`,
-                            style: 'font-size: 0.85em; opacity: 0.7;',
-                            x_align: Clutter.ActorAlign.CENTER
-                        }));
-                    }
-
-                    this._contentArea.add_child(detailsBox);
-
-                } else {
-                    throw new Error("Invalid response format");
                 }
+
+                this._contentArea.add_child(detailsBox);
 
             } catch (e) {
                 // Determine if this._contentArea is still valid to write to

@@ -7,7 +7,7 @@
 .tab-button {
     background-color: transparent;
     border-radius: 99px;
-    padding: 8px 16px;
+    padding: 4px 8px;
     color: #eeeeee;
 }
 
@@ -19,6 +19,10 @@
     background-color: rgba(255, 255, 255, 0.2);
     font-weight: bold;
     color: #ffffff;
+}
+
+.main-container {
+    /* Let the width be determined by content (approx 135px for the circle) */
 }
 
 .usage-label {

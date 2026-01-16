@@ -1,10 +1,15 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <schemalist gettext-domain="ai-usage-limits">
   <schema id="org.gnome.shell.extensions.ai-usage-limits" path="/org/gnome/shell/extensions/ai-usage-limits/">
-    <key name="api-key" type="s">
+    <key name="synthetic-api-key" type="s">
       <default>""</default>
-      <summary>API Key</summary>
-      <description>The API key for the service.</description>
+      <summary>Synthetic API Key</summary>
+      <description>The API key for the Synthetic service.</description>
+    </key>
+    <key name="chutes-api-key" type="s">
+      <default>""</default>
+      <summary>Chutes.ai API Key</summary>
+      <description>The API key for the Chutes.ai service.</description>
     </key>
   </schema>
 </schemalist>

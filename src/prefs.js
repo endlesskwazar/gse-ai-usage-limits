@@ -39,22 +39,44 @@ class AIUsagePreferences extends GObject.Object {
         const settings = this.getSettings();
 
         const page = new Adw.PreferencesPage();
-        const group = new Adw.PreferencesGroup({
-            title: 'General Settings',
-            description: 'Configure your API access'
+        
+        // Synthetic Group
+        const syntheticGroup = new Adw.PreferencesGroup({
+            title: 'Synthetic',
+            description: 'Configure your Synthetic access'
         });
 
-        const apiKeyRow = new Adw.PasswordEntryRow({
+        const syntheticApiKeyRow = new Adw.PasswordEntryRow({
             title: 'API Key'
         });
 
-        group.add(apiKeyRow);
-        page.add(group);
+        syntheticGroup.add(syntheticApiKeyRow);
+        page.add(syntheticGroup);
+
+        settings.bind(
+            'synthetic-api-key',
+            syntheticApiKeyRow,
+            'text',
+            Gio.SettingsBindFlags.DEFAULT
+        );
+
+        // Chutes.ai Group
+        const chutesGroup = new Adw.PreferencesGroup({
+            title: 'Chutes.ai',
+            description: 'Configure your Chutes.ai access'
+        });
+
+        const chutesApiKeyRow = new Adw.PasswordEntryRow({
+            title: 'API Key'
+        });
+
+        chutesGroup.add(chutesApiKeyRow);
+        page.add(chutesGroup);
         window.add(page);
 
         settings.bind(
-            'api-key',
-            apiKeyRow,
+            'chutes-api-key',
+            chutesApiKeyRow,
             'text',
             Gio.SettingsBindFlags.DEFAULT
         );
