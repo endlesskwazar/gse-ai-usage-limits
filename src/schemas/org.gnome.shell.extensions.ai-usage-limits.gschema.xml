@@ -6,15 +6,30 @@
       <summary>Synthetic API Key</summary>
       <description>The API key for the Synthetic service.</description>
     </key>
+    <key name="synthetic-enabled" type="b">
+      <default>true</default>
+      <summary>Enable Synthetic Provider</summary>
+      <description>Toggle to enable/disable Synthetic provider in the menu.</description>
+    </key>
     <key name="chutes-api-key" type="s">
       <default>""</default>
       <summary>Chutes.ai API Key</summary>
       <description>The API key for the Chutes.ai service.</description>
     </key>
+    <key name="chutes-enabled" type="b">
+      <default>true</default>
+      <summary>Enable Chutes.ai Provider</summary>
+      <description>Toggle to enable/disable Chutes.ai provider in the menu.</description>
+    </key>
     <key name="nano-gpt-api-key" type="s">
       <default>""</default>
       <summary>Nano-GPT API Key</summary>
       <description>The API key for the Nano-GPT service.</description>
+    </key>
+    <key name="nano-gpt-enabled" type="b">
+      <default>true</default>
+      <summary>Enable Nano-GPT Provider</summary>
+      <description>Toggle to enable/disable Nano-GPT provider in the menu.</description>
     </key>
     <key name="nano-gpt-show-daily-limit" type="b">
       <default>true</default>

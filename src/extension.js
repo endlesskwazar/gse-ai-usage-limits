@@ -14,6 +14,7 @@ const PROVIDERS = {
     synthetic: {
         name: 'Synthetic',
         settingKey: 'synthetic-api-key',
+        enabledKey: 'synthetic-enabled',
         url: 'https://api.synthetic.new/v2/quotas',
         parse: (data) => {
             if (data.subscription) {
@@ -29,6 +30,7 @@ const PROVIDERS = {
     chutes: {
         name: 'Chutes.ai',
         settingKey: 'chutes-api-key',
+        enabledKey: 'chutes-enabled',
         url: 'https://api.chutes.ai/users/me/quota_usage/me',
         parse: (data) => {
             console.log(`[AI-Usage] Chutes response: ${JSON.stringify(data)}`);
@@ -50,6 +52,7 @@ const PROVIDERS = {
     nanogpt: {
         name: 'Nano-GPT',
         settingKey: 'nano-gpt-api-key',
+        enabledKey: 'nano-gpt-enabled',
         url: 'https://nano-gpt.com/api/subscription/v1/usage',
         parse: (data, settings) => {
             // Check user preference for tracking mode
@@ -306,9 +309,78 @@ export default class AIUsageExtension extends Extension {
 
         Main.panel.addToStatusArea(this.uuid, this._indicator);
 
-        // Initialize with first provider
-        if (this._providers.length > 0) {
-            this._selectProvider(this._providers[0]);
+        // Listen for settings changes
+        this._settingsSignalId = this._settings.connect('changed', () => {
+            this._updateProvidersState();
+        });
+
+        // Initialize state
+        this._updateProvidersState();
+
+        // If current provider is not set (e.g. first run or invalid), select the first active one
+        if (!this._currentProviderKey || !this._isProviderActive(this._currentProviderKey)) {
+             const firstActive = this._providers.find(k => this._isProviderActive(k));
+             if (firstActive) {
+                 this._selectProvider(firstActive);
+             } else {
+                 // No active providers
+                 this._showNoProvidersMessage();
+             }
+        } else {
+            // Just refresh current
+            this._selectProvider(this._currentProviderKey);
+        }
+    }
+
+    _isProviderActive(key) {
+        const provider = PROVIDERS[key];
+        const apiKey = this._settings.get_string(provider.settingKey);
+        const enabled = this._settings.get_boolean(provider.enabledKey);
+        return apiKey && apiKey.length > 0 && enabled;
+    }
+
+    _updateProvidersState() {
+        const activeProviders = this._providers.filter(key => this._isProviderActive(key));
+
+        // Update dropdown visibility
+        this._providers.forEach(key => {
+            if (this._providerItems[key]) {
+                const isActive = this._isProviderActive(key);
+                // Visible in dropdown if it is active AND it is NOT the currently selected provider
+                this._providerItems[key].visible = isActive && (key !== this._currentProviderKey);
+            }
+        });
+
+        // Check if current provider is still valid
+        if (this._currentProviderKey && !this._isProviderActive(this._currentProviderKey)) {
+            // Current provider became invalid (disabled or key removed)
+            // Switch to another active provider if available
+            if (activeProviders.length > 0) {
+                this._selectProvider(activeProviders[0]);
+            } else {
+                this._currentProviderKey = null;
+                if (this._providerLabel) this._providerLabel.text = 'No Providers';
+                this._showNoProvidersMessage();
+            }
+        } else if (!this._currentProviderKey && activeProviders.length > 0) {
+            // If we were in "No Providers" state but now have one
+            this._selectProvider(activeProviders[0]);
+        }
+    }
+
+    _showNoProvidersMessage() {
+        if (this._contentArea) {
+            this._contentArea.destroy_all_children();
+            let msg = new St.Label({
+                text: 'No active providers.\nConfigure in Settings.',
+                style_class: 'error-label',
+                style: 'text-align: center; padding: 20px;',
+                x_align: Clutter.ActorAlign.CENTER
+            });
+            this._contentArea.add_child(msg);
+        }
+        if (this._providerLabel) {
+            this._providerLabel.text = 'Select Provider';
         }
     }
 
@@ -321,12 +393,8 @@ export default class AIUsageExtension extends Extension {
             this._dropdownBox.visible = false;
         }
 
-        // Hide the current provider from the dropdown
-        if (this._providerItems) {
-            Object.keys(this._providerItems).forEach(key => {
-                this._providerItems[key].visible = (key !== providerKey);
-            });
-        }
+        // Update dropdown visibility logic
+        this._updateProvidersState();
 
         this._loadQuota(providerKey);
     }
@@ -343,6 +411,8 @@ export default class AIUsageExtension extends Extension {
         }
 
         if (!apiKey) {
+            // This case should theoretically be handled by _isProviderActive filtering,
+            // but keep it as a fallback for safety.
             let errorLabel = new St.Label({
                 text: 'API Key missing.\nPlease set it in Extension Settings.',
                 style_class: 'error-label',
@@ -462,6 +532,11 @@ export default class AIUsageExtension extends Extension {
     }
 
     disable() {
+        if (this._settings && this._settingsSignalId) {
+            this._settings.disconnect(this._settingsSignalId);
+            this._settingsSignalId = null;
+        }
+
         if (this._menuManager) {
             this._menuManager = null;
         }

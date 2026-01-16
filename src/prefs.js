@@ -1,40 +1,8 @@
 import Adw from 'gi://Adw';
 import Gio from 'gi://Gio';
-import GObject from 'gi://GObject';
+import { ExtensionPreferences } from 'resource:///org/gnome/Shell/Extensions/js/extensions/prefs.js';
 
-const AIUsagePreferences = GObject.registerClass(
-class AIUsagePreferences extends GObject.Object {
-    _init(metadata) {
-        super._init();
-        this.metadata = metadata;
-        this.path = metadata.path;
-    }
-
-    getSettings() {
-        const schemaId = 'org.gnome.shell.extensions.ai-usage-limits';
-        const GioSSS = Gio.SettingsSchemaSource;
-        
-        // Try to load from extension directory first
-        let schemaSource = GioSSS.new_from_directory(
-            this.path + '/schemas',
-            GioSSS.get_default(),
-            false
-        );
-        
-        let schemaObj = schemaSource.lookup(schemaId, true);
-        if (!schemaObj) {
-            // Fallback to default if not found in local dir
-             schemaSource = GioSSS.get_default();
-             schemaObj = schemaSource.lookup(schemaId, true);
-        }
-
-        if (!schemaObj) {
-            throw new Error(`Schema ${schemaId} not found`);
-        }
-        
-        return new Gio.Settings({ settings_schema: schemaObj });
-    }
-
+export default class AIUsagePreferences extends ExtensionPreferences {
     fillPreferencesWindow(window) {
         const settings = this.getSettings();
 
@@ -50,13 +18,25 @@ class AIUsagePreferences extends GObject.Object {
             title: 'API Key'
         });
 
+        const syntheticEnabledRow = new Adw.SwitchRow({
+            title: 'Enable Provider'
+        });
+
         syntheticGroup.add(syntheticApiKeyRow);
+        syntheticGroup.add(syntheticEnabledRow);
         page.add(syntheticGroup);
 
         settings.bind(
             'synthetic-api-key',
             syntheticApiKeyRow,
             'text',
+            Gio.SettingsBindFlags.DEFAULT
+        );
+
+        settings.bind(
+            'synthetic-enabled',
+            syntheticEnabledRow,
+            'active',
             Gio.SettingsBindFlags.DEFAULT
         );
 
@@ -70,14 +50,25 @@ class AIUsagePreferences extends GObject.Object {
             title: 'API Key'
         });
 
+        const chutesEnabledRow = new Adw.SwitchRow({
+            title: 'Enable Provider'
+        });
+
         chutesGroup.add(chutesApiKeyRow);
+        chutesGroup.add(chutesEnabledRow);
         page.add(chutesGroup);
-        window.add(page);
 
         settings.bind(
             'chutes-api-key',
             chutesApiKeyRow,
             'text',
+            Gio.SettingsBindFlags.DEFAULT
+        );
+
+        settings.bind(
+            'chutes-enabled',
+            chutesEnabledRow,
+            'active',
             Gio.SettingsBindFlags.DEFAULT
         );
 
@@ -91,7 +82,12 @@ class AIUsagePreferences extends GObject.Object {
             title: 'API Key'
         });
 
+        const nanoGptEnabledRow = new Adw.SwitchRow({
+            title: 'Enable Provider'
+        });
+
         nanoGptGroup.add(nanoGptApiKeyRow);
+        nanoGptGroup.add(nanoGptEnabledRow);
 
         const nanoGptLimitRow = new Adw.SwitchRow({
             title: 'Show Daily Limit',
@@ -109,12 +105,19 @@ class AIUsagePreferences extends GObject.Object {
         );
 
         settings.bind(
+            'nano-gpt-enabled',
+            nanoGptEnabledRow,
+            'active',
+            Gio.SettingsBindFlags.DEFAULT
+        );
+
+        settings.bind(
             'nano-gpt-show-daily-limit',
             nanoGptLimitRow,
             'active',
             Gio.SettingsBindFlags.DEFAULT
         );
+        
+        window.add(page);
     }
-});
-
-export default AIUsagePreferences;
+}
