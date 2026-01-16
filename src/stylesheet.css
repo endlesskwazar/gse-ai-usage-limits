@@ -30,3 +30,33 @@
     padding-top: 12px;
     color: #cccccc;
 }
+
+/* New Styles */
+.header-box {
+    padding: 4px;
+    spacing: 6px;
+}
+
+.icon-button {
+    padding: 6px;
+    border-radius: 4px;
+}
+.icon-button:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+}
+
+.provider-button {
+    background-color: rgba(255, 255, 255, 0.05);
+    border-radius: 4px;
+    padding: 4px 8px;
+}
+.provider-button:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+}
+
+.dropdown-item {
+    padding: 8px 12px;
+}
+.dropdown-item:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+}

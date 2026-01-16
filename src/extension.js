@@ -117,6 +117,7 @@ class CircularProgress extends St.Widget {
 export default class AIUsageExtension extends Extension {
     enable() {
         this._settings = this.getSettings();
+        this._providers = Object.keys(PROVIDERS);
 
         // Create the Panel Menu Button
         this._indicator = new PanelMenu.Button(0.0, this.metadata.name, false);
@@ -176,11 +177,87 @@ export default class AIUsageExtension extends Extension {
             style_class: 'main-container'
         });
 
-        // Tab Bar (Buttons)
-        this._tabBar = new St.BoxLayout({
+        // Header Bar (Refresh + Provider Chooser)
+        this._headerBar = new St.BoxLayout({
             vertical: false,
-            x_align: Clutter.ActorAlign.CENTER,
-            style: 'padding: 4px 0px; spacing: 4px;'
+            style_class: 'header-box',
+            x_expand: true
+        });
+
+        // 1. Refresh Button
+        let refreshBtn = new St.Button({
+            style_class: 'icon-button',
+            can_focus: true
+        });
+        refreshBtn.set_child(new St.Icon({
+            icon_name: 'view-refresh-symbolic',
+            style_class: 'system-status-icon'
+        }));
+        refreshBtn.connect('clicked', () => {
+            this._loadQuota(this._currentProviderKey);
+        });
+        this._headerBar.add_child(refreshBtn);
+
+        // 2. Provider Chooser Button
+        this._providerBtn = new St.Button({
+            style_class: 'provider-button',
+            can_focus: true,
+            x_expand: true,
+            y_expand: true // Fill height of header
+        });
+        
+        // Layout for Provider Button: [ Label (Expand) ... Icon ]
+        let providerBtnLayout = new St.BoxLayout({
+            x_expand: true
+        });
+        
+        this._providerLabel = new St.Label({
+            text: '', // Set on init
+            y_align: Clutter.ActorAlign.CENTER,
+            x_expand: true
+        });
+        
+        let arrowIcon = new St.Icon({
+            icon_name: 'pan-down-symbolic',
+            style_class: 'popup-menu-icon'
+        });
+
+        providerBtnLayout.add_child(this._providerLabel);
+        providerBtnLayout.add_child(arrowIcon);
+        this._providerBtn.set_child(providerBtnLayout);
+
+        this._providerBtn.connect('clicked', () => {
+            this._dropdownBox.visible = !this._dropdownBox.visible;
+        });
+        
+        this._headerBar.add_child(this._providerBtn);
+
+        // Dropdown Area (Hidden by default)
+        this._dropdownBox = new St.BoxLayout({
+            vertical: true,
+            visible: false,
+            style: 'background-color: rgba(0,0,0,0.2); border-radius: 4px; margin-bottom: 8px;'
+        });
+        
+        this._providerItems = {};
+        this._providers.forEach(key => {
+             let itemBtn = new St.Button({
+                style_class: 'dropdown-item',
+                x_align: Clutter.ActorAlign.FILL,
+                x_expand: true,
+                can_focus: true
+             });
+             let itemLabel = new St.Label({
+                text: PROVIDERS[key].name,
+                x_align: Clutter.ActorAlign.START
+             });
+             itemBtn.set_child(itemLabel);
+             
+             itemBtn.connect('clicked', () => {
+                 this._selectProvider(key);
+             });
+             this._dropdownBox.add_child(itemBtn);
+             this._providerItems[key] = itemBtn;
         });
 
         // Content Area
@@ -190,48 +267,36 @@ export default class AIUsageExtension extends Extension {
             style: 'padding-bottom: 12px;'
         });
 
-        this._providers = Object.keys(PROVIDERS);
-        
-        if (this._providers.length > 0) {
-            this._providers.forEach((providerKey, index) => {
-                let provider = PROVIDERS[providerKey];
-                let btn = new St.Button({
-                    label: provider.name,
-                    style_class: 'tab-button',
-                    can_focus: true,
-                    toggle_mode: true
-                });
-
-                btn.connect('clicked', () => {
-                    this._switchTab(btn, providerKey);
-                });
-
-                this._tabBar.add_child(btn);
-                
-                // Activate first tab by default
-                if (index === 0) {
-                    this._switchTab(btn, providerKey);
-                }
-            });
-        }
-
-        this._mainLayout.add_child(this._tabBar);
+        this._mainLayout.add_child(this._headerBar);
+        this._mainLayout.add_child(this._dropdownBox);
         this._mainLayout.add_child(this._contentArea);
 
         // Add the custom layout to the menu
         this._indicator.menu.box.add_child(this._mainLayout);
 
         Main.panel.addToStatusArea(this.uuid, this._indicator);
+
+        // Initialize with first provider
+        if (this._providers.length > 0) {
+            this._selectProvider(this._providers[0]);
+        }
     }
 
-    _switchTab(activeBtn, providerKey) {
-        // Update button states
-        this._tabBar.get_children().forEach(child => {
-            child.checked = (child === activeBtn);
-        });
+    _selectProvider(providerKey) {
+        this._currentProviderKey = providerKey;
+        if (this._providerLabel) {
+            this._providerLabel.text = PROVIDERS[providerKey].name;
+        }
+        if (this._dropdownBox) {
+            this._dropdownBox.visible = false;
+        }
 
-        // Clear Content
-        this._contentArea.destroy_all_children();
+        // Hide the current provider from the dropdown
+        if (this._providerItems) {
+            Object.keys(this._providerItems).forEach(key => {
+                this._providerItems[key].visible = (key !== providerKey);
+            });
+        }
 
         this._loadQuota(providerKey);
     }
@@ -242,6 +307,11 @@ export default class AIUsageExtension extends Extension {
 
         const apiKey = this._settings.get_string(provider.settingKey);
         
+        // Clear Content immediately
+        if (this._contentArea) {
+             this._contentArea.destroy_all_children();
+        }
+
         if (!apiKey) {
             let errorLabel = new St.Label({
                 text: 'API Key missing.\nPlease set it in Extension Settings.',
@@ -374,5 +444,9 @@ export default class AIUsageExtension extends Extension {
             this._indicator = null;
         }
         this._settings = null;
+        this._headerBar = null;
+        this._dropdownBox = null;
+        this._providerItems = null;
+        this._contentArea = null;
     }
 }
