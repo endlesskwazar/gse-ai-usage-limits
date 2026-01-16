@@ -134,7 +134,7 @@ class CircularProgress extends St.Widget {
         // Overlay label
         let label = new St.Label({
             text: this._labelText || `${Math.round(this._percentage * 100)}%`,
-            style_class: 'progress-label',
+            style_class: 'ai-usage-progress-label',
             x_align: Clutter.ActorAlign.CENTER,
             y_align: Clutter.ActorAlign.CENTER,
         });
@@ -207,36 +207,44 @@ export default class AIUsageExtension extends Extension {
         // Main container inside the menu
         this._mainLayout = new St.BoxLayout({
             vertical: true,
-            style_class: 'main-container'
+            style_class: 'ai-usage-main-container'
         });
 
         // Header Bar (Refresh + Provider Chooser)
         this._headerBar = new St.BoxLayout({
             vertical: false,
-            style_class: 'header-box',
+            style_class: 'ai-usage-header-box',
             x_expand: true
         });
 
         // 1. Refresh Button
         let refreshBtn = new St.Button({
-            style_class: 'icon-button',
-            can_focus: true
+            style_class: 'ai-usage-icon-button',
+            can_focus: true,
+            y_align: Clutter.ActorAlign.CENTER,
+            x_align: Clutter.ActorAlign.CENTER
         });
         refreshBtn.set_child(new St.Icon({
             icon_name: 'view-refresh-symbolic',
-            style_class: 'system-status-icon'
+            style_class: 'popup-menu-icon'
         }));
         refreshBtn.connect('clicked', () => {
             this._loadQuota(this._currentProviderKey);
         });
         this._headerBar.add_child(refreshBtn);
 
-        // 2. Provider Chooser Button
+        // 2. Provider Container (Button + Dropdown)
+        this._providerContainer = new St.BoxLayout({
+            vertical: true,
+            x_expand: true,
+            y_align: Clutter.ActorAlign.START
+        });
+
         this._providerBtn = new St.Button({
-            style_class: 'provider-button',
+            style_class: 'ai-usage-provider-button',
             can_focus: true,
             x_expand: true,
-            y_expand: true // Fill height of header
+            y_align: Clutter.ActorAlign.CENTER
         });
         
         // Layout for Provider Button: [ Label (Expand) ... Icon ]
@@ -262,22 +270,26 @@ export default class AIUsageExtension extends Extension {
         this._providerBtn.connect('clicked', () => {
             if (this._providerBtn.reactive) {
                 this._dropdownBox.visible = !this._dropdownBox.visible;
+                // Update rounding based on visibility
+                if (this._dropdownBox.visible) {
+                    this._providerBtn.add_style_class_name('ai-usage-provider-button-open');
+                } else {
+                    this._providerBtn.remove_style_class_name('ai-usage-provider-button-open');
+                }
             }
         });
         
-        this._headerBar.add_child(this._providerBtn);
-
         // Dropdown Area (Hidden by default)
         this._dropdownBox = new St.BoxLayout({
             vertical: true,
             visible: false,
-            style: 'background-color: rgba(0,0,0,0.2); border-radius: 4px; margin-bottom: 8px;'
+            style_class: 'ai-usage-dropdown-box'
         });
         
         this._providerItems = {};
         this._providers.forEach(key => {
              let itemBtn = new St.Button({
-                style_class: 'dropdown-item',
+                style_class: 'ai-usage-dropdown-item',
                 x_align: Clutter.ActorAlign.FILL,
                 x_expand: true,
                 can_focus: true
@@ -290,10 +302,15 @@ export default class AIUsageExtension extends Extension {
              
              itemBtn.connect('clicked', () => {
                  this._selectProvider(key);
+                 this._providerBtn.remove_style_class_name('ai-usage-provider-button-open');
              });
              this._dropdownBox.add_child(itemBtn);
              this._providerItems[key] = itemBtn;
         });
+
+        this._providerContainer.add_child(this._providerBtn);
+        this._providerContainer.add_child(this._dropdownBox);
+        this._headerBar.add_child(this._providerContainer);
 
         // Content Area
         this._contentArea = new St.BoxLayout({
@@ -303,7 +320,6 @@ export default class AIUsageExtension extends Extension {
         });
 
         this._mainLayout.add_child(this._headerBar);
-        this._mainLayout.add_child(this._dropdownBox);
         this._mainLayout.add_child(this._contentArea);
 
         // Add the custom layout to the menu
@@ -366,8 +382,8 @@ export default class AIUsageExtension extends Extension {
                 // Only one provider available, disable the button
                 this._providerBtn.reactive = false;
                 this._providerBtn.can_focus = false;
-                this._providerBtn.add_style_class_name('provider-button-disabled');
-                this._providerBtn.remove_style_class_name('provider-button');
+                this._providerBtn.add_style_class_name('ai-usage-provider-button-disabled');
+                this._providerBtn.remove_style_class_name('ai-usage-provider-button');
                 // Hide dropdown if it's currently visible
                 if (this._dropdownBox && this._dropdownBox.visible) {
                     this._dropdownBox.visible = false;
@@ -376,8 +392,8 @@ export default class AIUsageExtension extends Extension {
                 // Multiple providers or none, enable the button
                 this._providerBtn.reactive = true;
                 this._providerBtn.can_focus = true;
-                this._providerBtn.add_style_class_name('provider-button');
-                this._providerBtn.remove_style_class_name('provider-button-disabled');
+                this._providerBtn.add_style_class_name('ai-usage-provider-button');
+                this._providerBtn.remove_style_class_name('ai-usage-provider-button-disabled');
             }
         }
 

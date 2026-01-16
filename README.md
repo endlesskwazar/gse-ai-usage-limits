@@ -10,14 +10,9 @@ A GNOME Shell extension that monitors your AI service usage quotas directly from
 ## Supported Services
 
 ### Current Providers
-1. **Synthetic** - API quota monitoring for Synthetic.ai
-2. **Chutes.ai** - Usage tracking for Chutes.ai services
-
-### Planned Providers
+- Synthetic
+- Chutes.ai
 - Nano-GPT
-- GLM Coding Plan
-- Claude Code
-- Custom
 
 ## Installation
 
@@ -60,14 +55,7 @@ This script installs the extension and launches a nested GNOME Shell session for
 1. Open GNOME Extensions application
 2. Find "AI Usage Limits Hello World" in your extensions list
 3. Click the settings (gear) icon
-4. Enter your API keys for each service:
-   - **Synthetic**: Your Synthetic API key
-   - **Chutes.ai**: Your Chutes.ai API key
-
-### Getting API Keys
-
-- **Synthetic**: Visit [synthetic.new](https://synthetic.new) and obtain your API key from the dashboard
-- **Chutes.ai**: Visit [chutes.ai](https://chutes.ai) and get your API key from account settings
+4. Enter your API keys for service
 
 ## Requirements
 
