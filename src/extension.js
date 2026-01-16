@@ -316,6 +316,13 @@ export default class AIUsageExtension extends Extension {
             this._updateProvidersState();
         });
 
+        // Listen for menu open to refresh limits
+        this._menuOpenSignalId = this._indicator.menu.connect('open-state-changed', (menu, open) => {
+            if (open && this._currentProviderKey && this._isProviderActive(this._currentProviderKey)) {
+                this._loadQuota(this._currentProviderKey);
+            }
+        });
+
         // Initialize state
         this._updateProvidersState();
 
@@ -558,6 +565,11 @@ export default class AIUsageExtension extends Extension {
         if (this._settings && this._settingsSignalId) {
             this._settings.disconnect(this._settingsSignalId);
             this._settingsSignalId = null;
+        }
+        
+        if (this._indicator && this._indicator.menu && this._menuOpenSignalId) {
+            this._indicator.menu.disconnect(this._menuOpenSignalId);
+            this._menuOpenSignalId = null;
         }
 
         if (this._menuManager) {
