@@ -79,8 +79,10 @@ const CircularProgress = GObject.registerClass(
 class CircularProgress extends St.Widget {
     _init(percentage, labelText) {
         super._init({
-            width: 135,
-            height: 135,
+            width: 110,
+            height: 110,
+            x_expand: false,
+            y_expand: false,
             x_align: Clutter.ActorAlign.CENTER,
             y_align: Clutter.ActorAlign.CENTER,
             layout_manager: new Clutter.BinLayout()
@@ -91,10 +93,12 @@ class CircularProgress extends St.Widget {
 
         // Create a drawing area
         this._drawingArea = new St.DrawingArea({
-            width: 135,
-            height: 135,
-            x_expand: true,
-            y_expand: true
+            width: 110,
+            height: 110,
+            x_expand: false,
+            y_expand: false,
+            x_align: Clutter.ActorAlign.CENTER,
+            y_align: Clutter.ActorAlign.CENTER
         });
 
         this._drawingArea.connect('repaint', (area) => {
@@ -108,14 +112,14 @@ class CircularProgress extends St.Widget {
 
             // Background circle (Grey)
             cr.setSourceRGBA(0.3, 0.3, 0.3, 0.5);
-            cr.setLineWidth(12);
+            cr.setLineWidth(10);
             cr.arc(centerX, centerY, radius, 0, 2 * Math.PI);
             cr.stroke();
 
             // Progress arc (Green)
             if (this._percentage > 0) {
                 cr.setSourceRGBA(0.2, 0.8, 0.2, 1);
-                cr.setLineWidth(12);
+                cr.setLineWidth(10);
                 cr.setLineCap(Cairo.LineCap.ROUND);
                 cr.arc(centerX, centerY, radius, startAngle, endAngle);
                 cr.stroke();
@@ -133,7 +137,7 @@ class CircularProgress extends St.Widget {
         });
 
         if (this._labelText) {
-            label.style = 'font-size: 14px;';
+            label.style = 'font-size: 12px;';
         }
         
         this.add_child(label);
