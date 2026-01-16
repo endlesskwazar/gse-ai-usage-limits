@@ -309,7 +309,7 @@ export default class AIUsageExtension extends Extension {
                 const renewsAt = parsedData.renewsAt;
 
                 let renewsStr = '';
-                if (renewsAt) {
+                if (renewsAt && requests > 0) {
                     const renewsDate = new Date(renewsAt);
                     const diffMs = renewsDate - new Date();
                     const diffHrs = Math.floor(diffMs / (1000 * 60 * 60));
