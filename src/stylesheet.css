@@ -38,11 +38,11 @@
 }
 
 .icon-button {
-    padding: 6px;
-    border-radius: 4px;
+    padding: 4px;
+    background-color: transparent;
 }
-.icon-button:hover {
-    background-color: rgba(255, 255, 255, 0.1);
+.icon-button:hover .system-status-icon {
+    color: #6bd2ff;
 }
 
 .provider-button {
