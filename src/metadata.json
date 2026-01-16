@@ -1,6 +1,6 @@
 {
-  "name": "AI Usage Limits Hello World",
-  "description": "A simple hello world extension for GNOME 49",
+  "name": "AI Usage Limits",
+  "description": "A GNOME Shell extension that monitors your AI service usage quotas directly from your panel.",
   "uuid": "hello-world@gse-ai-usage-limits.local",
   "shell-version": [ "49" ],
   "version": 1,
