@@ -124,11 +124,8 @@ export default class AIUsageExtension extends Extension {
         // Icon/Text on the panel
         let panelBox = new St.BoxLayout();
         
-        let iconPath = this.dir.get_child('icons').get_child('ai-limit-symbolic.svg');
-        let gicon = new Gio.FileIcon({ file: iconPath });
-        
         let icon = new St.Icon({
-            gicon: gicon,
+            icon_name: 'thunderbolt-symbolic',
             style_class: 'system-status-icon'
         });
         panelBox.add_child(icon);
