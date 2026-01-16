@@ -260,7 +260,9 @@ export default class AIUsageExtension extends Extension {
         this._providerBtn.set_child(providerBtnLayout);
 
         this._providerBtn.connect('clicked', () => {
-            this._dropdownBox.visible = !this._dropdownBox.visible;
+            if (this._providerBtn.reactive) {
+                this._dropdownBox.visible = !this._dropdownBox.visible;
+            }
         });
         
         this._headerBar.add_child(this._providerBtn);
@@ -350,6 +352,27 @@ export default class AIUsageExtension extends Extension {
                 this._providerItems[key].visible = isActive && (key !== this._currentProviderKey);
             }
         });
+
+        // Disable provider button if there's only one active provider
+        if (this._providerBtn) {
+            if (activeProviders.length === 1) {
+                // Only one provider available, disable the button
+                this._providerBtn.reactive = false;
+                this._providerBtn.can_focus = false;
+                this._providerBtn.add_style_class_name('provider-button-disabled');
+                this._providerBtn.remove_style_class_name('provider-button');
+                // Hide dropdown if it's currently visible
+                if (this._dropdownBox && this._dropdownBox.visible) {
+                    this._dropdownBox.visible = false;
+                }
+            } else {
+                // Multiple providers or none, enable the button
+                this._providerBtn.reactive = true;
+                this._providerBtn.can_focus = true;
+                this._providerBtn.add_style_class_name('provider-button');
+                this._providerBtn.remove_style_class_name('provider-button-disabled');
+            }
+        }
 
         // Check if current provider is still valid
         if (this._currentProviderKey && !this._isProviderActive(this._currentProviderKey)) {
