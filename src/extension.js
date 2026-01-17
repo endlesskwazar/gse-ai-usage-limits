@@ -9,6 +9,7 @@ import * as PopupMenu from 'resource:///org/gnome/shell/ui/popupMenu.js';
 
 import CircularProgress from './widgets/CircularProgress.js';
 import ProviderDropdown from './widgets/ProviderDropdown.js';
+import RefreshButton from './widgets/RefreshButton.js';
 
 const PROVIDERS = {
     synthetic: {
@@ -149,22 +150,11 @@ export default class AIUsageExtension extends Extension {
         });
 
         // 1. Refresh Button
-        let refreshBtn = new St.Button({
-            style_class: 'ai-usage-icon-button',
-            can_focus: true,
-            y_align: Clutter.ActorAlign.CENTER,
-            x_align: Clutter.ActorAlign.CENTER
-        });
-        refreshBtn.set_child(
-            new St.Icon({
-                icon_name: 'view-refresh-symbolic',
-                style_class: 'popup-menu-icon'
-            })
-        );
-        refreshBtn.connect('clicked', () => {
+        this._refreshButton = new RefreshButton();
+        this._refreshButton.connect('refresh-clicked', () => {
             this._loadQuota(this._currentProviderKey);
         });
-        this._headerBar.add_child(refreshBtn);
+        this._headerBar.add_child(this._refreshButton);
 
         // 2. Provider Dropdown Widget
         this._providerDropdown = new ProviderDropdown({
