@@ -11,7 +11,7 @@ const ProviderDropdown = GObject.registerClass(
         }
     },
     class ProviderDropdown extends St.BoxLayout {
-        _init({ providers, settings, currentProviderKey = null }) {
+        _init({ providerStateManager }) {
             super._init({
                 vertical: true,
                 x_expand: true,
@@ -19,10 +19,22 @@ const ProviderDropdown = GObject.registerClass(
                 style_class: 'ai-usage-provider-dropdown-container'
             });
 
-            this._providers = providers;
-            this._settings = settings;
-            this._currentProviderKey = currentProviderKey;
+            this._providerStateManager = providerStateManager;
+            this._providers = providerStateManager.getProviders();
+            this._currentProviderKey = null;
             this._providerItems = {};
+
+            // Subscribe to provider state changes
+            this._providersUpdatedSignalId = this._providerStateManager.connect('providers-updated', () => {
+                this._updateProvidersState();
+            });
+
+            this._providerChangedSignalId = this._providerStateManager.connect(
+                'provider-changed',
+                (psm, providerKey) => {
+                    this._updateCurrentProviderDisplay(providerKey);
+                }
+            );
 
             // Button Container
             this._providerBtn = new St.Button({
@@ -38,7 +50,7 @@ const ProviderDropdown = GObject.registerClass(
             });
 
             this._providerLabel = new St.Label({
-                text: currentProviderKey ? providers[currentProviderKey].name : 'Select Provider',
+                text: 'Select Provider',
                 y_align: Clutter.ActorAlign.CENTER,
                 x_expand: true
             });
@@ -71,7 +83,7 @@ const ProviderDropdown = GObject.registerClass(
                 style_class: 'ai-usage-dropdown-box'
             });
 
-            Object.keys(providers).forEach(key => {
+            Object.keys(this._providers).forEach(key => {
                 let itemBtn = new St.Button({
                     style_class: 'ai-usage-dropdown-item',
                     x_align: Clutter.ActorAlign.FILL,
@@ -79,7 +91,7 @@ const ProviderDropdown = GObject.registerClass(
                     can_focus: true
                 });
                 let itemLabel = new St.Label({
-                    text: providers[key].name,
+                    text: this._providers[key].name,
                     x_align: Clutter.ActorAlign.START
                 });
                 itemBtn.set_child(itemLabel);
@@ -98,24 +110,13 @@ const ProviderDropdown = GObject.registerClass(
             this._updateProvidersState();
         }
 
-        _isProviderActive(key) {
-            const provider = this._providers[key];
-            const apiKey = this._settings.get_string(provider.settingKey);
-            const enabled = this._settings.get_boolean(provider.enabledKey);
-            return apiKey && apiKey.length > 0 && enabled;
-        }
-
-        update() {
-            this._updateProvidersState();
-        }
-
         _updateProvidersState() {
-            const activeProviders = Object.keys(this._providers).filter(key => this._isProviderActive(key));
+            const activeProviders = this._providerStateManager.getActiveProviders();
 
             // Update dropdown item visibility
             Object.keys(this._providers).forEach(key => {
                 if (this._providerItems[key]) {
-                    const isActive = this._isProviderActive(key);
+                    const isActive = this._providerStateManager.isProviderActive(key);
                     // Visible in dropdown if it is active AND it is NOT the currently selected provider
                     this._providerItems[key].visible = isActive && key !== this._currentProviderKey;
                 }
@@ -142,25 +143,28 @@ const ProviderDropdown = GObject.registerClass(
             }
 
             // Check if current provider is still valid
-            if (this._currentProviderKey && !this._isProviderActive(this._currentProviderKey)) {
+            if (this._currentProviderKey && !this._providerStateManager.isProviderActive(this._currentProviderKey)) {
                 // Current provider became invalid (disabled or key removed)
-                // Switch to another active provider if available
-                if (activeProviders.length > 0) {
-                    this._selectProvider(activeProviders[0], false);
-                } else {
-                    this._currentProviderKey = null;
-                    if (this._providerLabel) this._providerLabel.text = 'No Providers';
-                }
+                // ProviderStateManager will handle switching to another active provider
+                // We just need to update our display when it emits provider-changed
+                this._currentProviderKey = null;
+                if (this._providerLabel) this._providerLabel.text = 'No Providers';
             } else if (!this._currentProviderKey && activeProviders.length > 0) {
                 // If we were in "No Providers" state but now have one
-                this._selectProvider(activeProviders[0], false);
+                // ProviderStateManager will emit provider-changed, which will update our display
+                this._currentProviderKey = activeProviders[0];
+                this._updateCurrentProviderDisplay(this._currentProviderKey);
             }
         }
 
-        _selectProvider(providerKey, emitSignal = true) {
+        _updateCurrentProviderDisplay(providerKey) {
             this._currentProviderKey = providerKey;
             if (this._providerLabel) {
-                this._providerLabel.text = this._providers[providerKey].name;
+                if (providerKey && this._providers[providerKey]) {
+                    this._providerLabel.text = this._providers[providerKey].name;
+                } else {
+                    this._providerLabel.text = 'No Providers';
+                }
             }
             if (this._dropdownBox) {
                 this._dropdownBox.visible = false;
@@ -168,6 +172,11 @@ const ProviderDropdown = GObject.registerClass(
 
             // Update dropdown visibility logic
             this._updateProvidersState();
+        }
+
+        _selectProvider(providerKey, emitSignal = true) {
+            // Delegate to ProviderStateManager
+            this._providerStateManager.setCurrentProvider(providerKey);
 
             // Emit signal only when user initiates the change
             if (emitSignal) {
@@ -179,15 +188,30 @@ const ProviderDropdown = GObject.registerClass(
             return this._currentProviderKey;
         }
 
-        setCurrentProvider(providerKey) {
-            if (providerKey === null) {
-                // Handle "no provider" state
-                this._currentProviderKey = null;
-                if (this._providerLabel) this._providerLabel.text = 'No Providers';
-                // Don't emit signal for programmatic changes
-            } else if (this._isProviderActive(providerKey)) {
-                this._selectProvider(providerKey, false); // Don't emit signal for programmatic changes
+        setCurrentProvider(_providerKey) {
+            // This method is kept for backward compatibility but doesn't do anything
+            // ProviderStateManager manages the current provider state
+            // The display is updated via the provider-changed signal
+        }
+
+        destroy() {
+            if (this._providerStateManager && this._providersUpdatedSignalId) {
+                this._providerStateManager.disconnect(this._providersUpdatedSignalId);
+                this._providersUpdatedSignalId = null;
             }
+
+            if (this._providerStateManager && this._providerChangedSignalId) {
+                this._providerStateManager.disconnect(this._providerChangedSignalId);
+                this._providerChangedSignalId = null;
+            }
+
+            this._providerStateManager = null;
+            this._providers = null;
+            this._currentProviderKey = null;
+            this._providerItems = null;
+            this._providerBtn = null;
+            this._providerLabel = null;
+            this._dropdownBox = null;
         }
     }
 );

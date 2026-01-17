@@ -8,18 +8,16 @@ import * as PopupMenu from 'resource:///org/gnome/shell/ui/popupMenu.js';
 import CircularProgress from './widgets/CircularProgress.js';
 import ProviderDropdown from './widgets/ProviderDropdown.js';
 import RefreshButton from './widgets/RefreshButton.js';
-import ProviderConfig from './providers/ProviderConfig.js';
 import ApiService from './services/ApiService.js';
-
-const PROVIDERS = ProviderConfig.getProviders();
+import ProviderStateManager from './services/ProviderStateManager.js';
 
 export default class AIUsageExtension extends Extension {
     enable() {
-        this._settings = this.getSettings();
-        this._providers = ProviderConfig.getProviderKeys();
+        // Initialize ProviderStateManager
+        this._providerStateManager = new ProviderStateManager(this.getSettings());
 
         // Initialize API service
-        this._apiService = new ApiService(this._settings);
+        this._apiService = new ApiService(this._providerStateManager);
 
         // Create the Panel Menu Button
         this._indicator = new PanelMenu.Button(0.0, this.metadata.name, false);
@@ -95,12 +93,7 @@ export default class AIUsageExtension extends Extension {
 
         // 2. Provider Dropdown Widget
         this._providerDropdown = new ProviderDropdown({
-            providers: PROVIDERS,
-            settings: this._settings,
-            currentProviderKey: this._currentProviderKey
-        });
-        this._providerDropdown.connect('provider-changed', (widget, providerKey) => {
-            this._selectProvider(providerKey);
+            providerStateManager: this._providerStateManager
         });
         this._headerBar.add_child(this._providerDropdown);
 
@@ -119,68 +112,32 @@ export default class AIUsageExtension extends Extension {
 
         Main.panel.addToStatusArea(this.uuid, this._indicator);
 
-        // Listen for settings changes
-        this._settingsSignalId = this._settings.connect('changed', () => {
-            this._updateProvidersState();
+        // Listen for provider changes from ProviderStateManager
+        this._providerChangedSignalId = this._providerStateManager.connect('provider-changed', (psm, providerKey) => {
+            if (providerKey) {
+                this._loadQuota(providerKey).catch(err => console.error('Failed to load quota:', err));
+            } else {
+                this._showNoProvidersMessage();
+            }
+        });
+
+        // Listen for current provider becoming invalid
+        this._currentProviderInvalidSignalId = this._providerStateManager.connect('current-provider-invalid', () => {
+            this._showNoProvidersMessage();
         });
 
         // Listen for menu open to refresh limits
         this._menuOpenSignalId = this._indicator.menu.connect('open-state-changed', (menu, open) => {
-            if (open && this._currentProviderKey && this._isProviderActive(this._currentProviderKey)) {
-                this._loadQuota(this._currentProviderKey).catch(err => console.error('Failed to load quota:', err));
+            if (open) {
+                const currentProvider = this._providerStateManager.getCurrentProvider();
+                if (currentProvider && this._providerStateManager.isProviderActive(currentProvider)) {
+                    this._loadQuota(currentProvider).catch(err => console.error('Failed to load quota:', err));
+                }
             }
         });
 
-        // Initialize state
-        this._updateProvidersState();
-
-        // If current provider is not set (e.g. first run or invalid), select the first active one
-        if (!this._currentProviderKey || !this._isProviderActive(this._currentProviderKey)) {
-            const firstActive = this._providers.find(k => this._isProviderActive(k));
-            if (firstActive) {
-                this._selectProvider(firstActive);
-            } else {
-                // No active providers
-                this._showNoProvidersMessage();
-            }
-        } else {
-            // Just refresh current
-            this._selectProvider(this._currentProviderKey);
-        }
-    }
-
-    _isProviderActive(key) {
-        const provider = ProviderConfig.getProvider(key);
-        if (!provider) return false;
-        const apiKey = this._settings.get_string(provider.settingKey);
-        const enabled = this._settings.get_boolean(provider.enabledKey);
-        return apiKey && apiKey.length > 0 && enabled;
-    }
-
-    _updateProvidersState() {
-        if (this._providerDropdown) {
-            this._providerDropdown.update();
-        }
-
-        const activeProviders = this._providers.filter(key => this._isProviderActive(key));
-
-        // Check if current provider is still valid
-        if (this._currentProviderKey && !this._isProviderActive(this._currentProviderKey)) {
-            // Current provider became invalid (disabled or key removed)
-            // Switch to another active provider if available
-            if (activeProviders.length > 0) {
-                this._selectProvider(activeProviders[0]);
-            } else {
-                this._currentProviderKey = null;
-                if (this._providerDropdown) {
-                    this._providerDropdown.setCurrentProvider(null);
-                }
-                this._showNoProvidersMessage();
-            }
-        } else if (!this._currentProviderKey && activeProviders.length > 0) {
-            // If we were in "No Providers" state but now have one
-            this._selectProvider(activeProviders[0]);
-        }
+        // Initialize state - ProviderStateManager will auto-select first active provider
+        this._providerStateManager.setCurrentProvider(null);
     }
 
     _showNoProvidersMessage() {
@@ -196,36 +153,19 @@ export default class AIUsageExtension extends Extension {
         }
     }
 
-    _selectProvider(providerKey) {
-        this._currentProviderKey = providerKey;
-        if (this._providerDropdown) {
-            this._providerDropdown.setCurrentProvider(providerKey);
-        }
-
-        // Update dropdown visibility logic
-        this._updateProvidersState();
-
-        if (providerKey) {
-            this._loadQuota(providerKey).catch(err => console.error('Failed to load quota:', err));
-        } else {
-            // Show no providers message
-            this._showNoProvidersMessage();
-        }
-    }
-
     async _loadQuota(providerKey) {
-        const provider = ProviderConfig.getProvider(providerKey);
+        const provider = this._providerStateManager.getProvider(providerKey);
         if (!provider) return;
 
-        const apiKey = this._settings.get_string(provider.settingKey);
+        const providerSettings = this._providerStateManager.getProviderSettings(providerKey);
 
         // Clear Content immediately
         if (this._contentArea) {
             this._contentArea.destroy_all_children();
         }
 
-        if (!apiKey) {
-            // This case should theoretically be handled by _isProviderActive filtering,
+        if (!providerSettings.apiKey) {
+            // This case should theoretically be handled by provider state filtering,
             // but keep it as a fallback for safety.
             let errorLabel = new St.Label({
                 text: 'API Key missing.\nPlease set it in Extension Settings.',
@@ -260,7 +200,7 @@ export default class AIUsageExtension extends Extension {
 
         // Perform async request using ApiService
         try {
-            const parsedData = await this._apiService.fetchQuota(provider, apiKey);
+            const parsedData = await this._apiService.fetchQuota(provider, providerKey);
 
             // Check if extension is still active
             if (!this._indicator) return;
@@ -331,9 +271,14 @@ export default class AIUsageExtension extends Extension {
     }
 
     disable() {
-        if (this._settings && this._settingsSignalId) {
-            this._settings.disconnect(this._settingsSignalId);
-            this._settingsSignalId = null;
+        if (this._providerStateManager && this._providerChangedSignalId) {
+            this._providerStateManager.disconnect(this._providerChangedSignalId);
+            this._providerChangedSignalId = null;
+        }
+
+        if (this._providerStateManager && this._currentProviderInvalidSignalId) {
+            this._providerStateManager.disconnect(this._currentProviderInvalidSignalId);
+            this._currentProviderInvalidSignalId = null;
         }
 
         if (this._indicator && this._indicator.menu && this._menuOpenSignalId) {
@@ -356,7 +301,10 @@ export default class AIUsageExtension extends Extension {
             this._apiService.destroy();
             this._apiService = null;
         }
-        this._settings = null;
+        if (this._providerStateManager) {
+            this._providerStateManager.destroy();
+            this._providerStateManager = null;
+        }
         this._headerBar = null;
         this._providerDropdown = null;
         this._contentArea = null;

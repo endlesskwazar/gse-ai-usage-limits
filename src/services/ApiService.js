@@ -6,8 +6,8 @@ import Soup from 'gi://Soup';
  * Encapsulates Soup Session management and request/response handling.
  */
 export default class ApiService {
-    constructor(settings) {
-        this._settings = settings;
+    constructor(providerStateManager) {
+        this._providerStateManager = providerStateManager;
         this._session = new Soup.Session();
     }
 
@@ -16,11 +16,14 @@ export default class ApiService {
      * @param {Object} provider - Provider configuration object
      * @param {string} provider.url - The API endpoint URL
      * @param {Function} provider.parse - Function to parse the response data
-     * @param {string} apiKey - API key for authentication
+     * @param {string} providerKey - The provider key to get settings for
      * @returns {Promise<Object>} Parsed quota data with limit, used, and renewsAt properties
      */
-    async fetchQuota(provider, apiKey) {
+    async fetchQuota(provider, providerKey) {
         return new Promise((resolve, reject) => {
+            const providerSettings = this._providerStateManager.getProviderSettings(providerKey);
+            const apiKey = providerSettings.apiKey;
+
             const message = Soup.Message.new('GET', provider.url);
             message.request_headers.append('Authorization', `Bearer ${apiKey}`);
 
@@ -30,7 +33,7 @@ export default class ApiService {
                     const response = this._parseResponse(message, bytes);
 
                     // Parse provider-specific data
-                    const parsedData = provider.parse(response, this._settings);
+                    const parsedData = provider.parse(response, this._providerStateManager._settings);
                     resolve(parsedData);
                 } catch (error) {
                     reject(error);
@@ -63,6 +66,6 @@ export default class ApiService {
         if (this._session) {
             this._session = null;
         }
-        this._settings = null;
+        this._providerStateManager = null;
     }
 }
