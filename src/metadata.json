@@ -1,8 +1,8 @@
 {
-  "name": "AI Usage Limits",
-  "description": "A GNOME Shell extension that monitors your AI service usage quotas directly from your panel.",
-  "uuid": "hello-world@gse-ai-usage-limits.local",
-  "shell-version": [ "49" ],
-  "version": 1,
-  "settings-schema": "org.gnome.shell.extensions.ai-usage-limits"
+    "name": "AI Usage Limits",
+    "description": "A GNOME Shell extension that monitors your AI service usage quotas directly from your panel.",
+    "uuid": "hello-world@gse-ai-usage-limits.local",
+    "shell-version": ["49"],
+    "version": 1,
+    "settings-schema": "org.gnome.shell.extensions.ai-usage-limits"
 }

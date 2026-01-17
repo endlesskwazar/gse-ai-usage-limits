@@ -1,5 +1,6 @@
 import GObject from 'gi://GObject';
 import ProviderConfig from '../providers/ProviderConfig.js';
+import SettingsHelper from './SettingsHelper.js';
 
 /**
  * ProviderStateManager - Centralized provider state management
@@ -37,14 +38,14 @@ const ProviderStateManager = GObject.registerClass(
          */
         _init(settings) {
             super._init();
-            this._settings = settings;
+            this._settingsHelper = new SettingsHelper(settings);
             this._currentProviderKey = null;
             this._providersCache = ProviderConfig.getProviders();
             this._providerKeysCache = Object.keys(this._providersCache);
             this._settingsSignalId = null;
 
             // Listen for settings changes
-            this._settingsSignalId = this._settings.connect('changed', () => {
+            this._settingsSignalId = this._settingsHelper.connect('changed', () => {
                 this._onSettingsChanged();
             });
         }
@@ -131,8 +132,8 @@ const ProviderStateManager = GObject.registerClass(
                 return false;
             }
 
-            const apiKey = this._settings.get_string(provider.settingKey);
-            const enabled = this._settings.get_boolean(provider.enabledKey);
+            const apiKey = this._settingsHelper.getProviderApiKey(providerKey);
+            const enabled = this._settingsHelper.isProviderEnabled(providerKey);
 
             return apiKey && apiKey.length > 0 && enabled;
         }
@@ -157,8 +158,8 @@ const ProviderStateManager = GObject.registerClass(
             }
 
             return {
-                apiKey: this._settings.get_string(provider.settingKey),
-                enabled: this._settings.get_boolean(provider.enabledKey)
+                apiKey: this._settingsHelper.getProviderApiKey(providerKey),
+                enabled: this._settingsHelper.isProviderEnabled(providerKey)
             };
         }
 
@@ -182,7 +183,7 @@ const ProviderStateManager = GObject.registerClass(
                 return false;
             }
 
-            const apiKey = this._settings.get_string(provider.settingKey);
+            const apiKey = this._settingsHelper.getProviderApiKey(providerKey);
             return apiKey && apiKey.length > 0;
         }
 
@@ -234,11 +235,11 @@ const ProviderStateManager = GObject.registerClass(
          * Clean up resources when the manager is no longer needed
          */
         destroy() {
-            if (this._settings && this._settingsSignalId) {
-                this._settings.disconnect(this._settingsSignalId);
+            if (this._settingsHelper && this._settingsSignalId) {
+                this._settingsHelper.disconnect(this._settingsSignalId);
                 this._settingsSignalId = null;
             }
-            this._settings = null;
+            this._settingsHelper = null;
             this._currentProviderKey = null;
             this._providersCache = null;
             this._providerKeysCache = null;

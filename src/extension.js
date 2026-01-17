@@ -87,7 +87,10 @@ export default class AIUsageExtension extends Extension {
         // 1. Refresh Button
         this._refreshButton = new RefreshButton();
         this._refreshButton.connect('refresh-clicked', () => {
-            this._loadQuota(this._currentProviderKey).catch(err => console.error('Failed to load quota:', err));
+            const currentProvider = this._providerStateManager.getCurrentProvider();
+            if (currentProvider) {
+                this._loadQuota(currentProvider).catch(err => console.error('Failed to load quota:', err));
+            }
         });
         this._headerBar.add_child(this._refreshButton);
 

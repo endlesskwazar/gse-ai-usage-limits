@@ -2,36 +2,13 @@ import Adw from 'gi://Adw';
 import Gio from 'gi://Gio';
 import Gtk from 'gi://Gtk';
 import { ExtensionPreferences } from 'resource:///org/gnome/Shell/Extensions/js/extensions/prefs.js';
-
-const PROVIDERS = [
-    {
-        id: 'synthetic',
-        name: 'Synthetic',
-        description: 'AI service provider',
-        settingKey: 'synthetic-api-key',
-        enabledKey: 'synthetic-enabled'
-    },
-    {
-        id: 'chutes',
-        name: 'Chutes.ai',
-        description: 'AI service provider',
-        settingKey: 'chutes-api-key',
-        enabledKey: 'chutes-enabled'
-    },
-    {
-        id: 'nano-gpt',
-        name: 'Nano-GPT',
-        description: 'AI service provider',
-        settingKey: 'nano-gpt-api-key',
-        enabledKey: 'nano-gpt-enabled',
-        hasDailyToggle: true,
-        dailyToggleKey: 'nano-gpt-show-daily-limit'
-    }
-];
+import ProviderConfig from './providers/ProviderConfig.js';
 
 export default class AIUsagePreferences extends ExtensionPreferences {
     fillPreferencesWindow(window) {
         const settings = this.getSettings();
+        const providers = ProviderConfig.getProviders();
+        const providerKeys = Object.keys(providers);
 
         const page = new Adw.PreferencesPage();
         page.title = 'Providers';
@@ -44,7 +21,8 @@ export default class AIUsagePreferences extends ExtensionPreferences {
         });
         page.add(providersGroup);
 
-        PROVIDERS.forEach(provider => {
+        providerKeys.forEach(key => {
+            const provider = providers[key];
             const actionRow = new Adw.ActionRow({
                 title: provider.name,
                 subtitle: provider.description,

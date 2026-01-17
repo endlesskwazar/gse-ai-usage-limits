@@ -1,31 +1,33 @@
 {
-  "name": "gse-ai-usage-limits",
-  "version": "1.0.0",
-  "description": "A GNOME Shell extension that monitors your AI service usage quotas directly from your panel.",
-  "main": "index.js",
-  "scripts": {
-    "lint": "eslint .",
-    "lint:fix": "eslint . --fix",
-    "format": "prettier --write .",
-    "test": "echo \"Error: no test specified\" && exit 1"
-  },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/endlesskwazar/gse-ai-usage-limits.git"
-  },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "type": "module",
-  "bugs": {
-    "url": "https://github.com/endlesskwazar/gse-ai-usage-limits/issues"
-  },
-  "homepage": "https://github.com/endlesskwazar/gse-ai-usage-limits#readme",
-  "devDependencies": {
-    "eslint": "^9.39.2",
-    "eslint-config-prettier": "^10.1.8",
-    "eslint-plugin-prettier": "^5.5.5",
-    "globals": "^17.0.0",
-    "prettier": "^3.8.0"
-  }
+    "name": "gse-ai-usage-limits",
+    "version": "1.0.0",
+    "description": "A GNOME Shell extension that monitors your AI service usage quotas directly from your panel.",
+    "main": "index.js",
+    "scripts": {
+        "lint": "eslint .",
+        "lint:fix": "eslint . --fix",
+        "format": "prettier --write .",
+        "test": "echo \"Error: no test specified\" && exit 1",
+        "generate-schema": "node scripts/generate-schema.js",
+        "validate-schema": "node scripts/validate-schema.js"
+    },
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/endlesskwazar/gse-ai-usage-limits.git"
+    },
+    "keywords": [],
+    "author": "",
+    "license": "ISC",
+    "type": "module",
+    "bugs": {
+        "url": "https://github.com/endlesskwazar/gse-ai-usage-limits/issues"
+    },
+    "homepage": "https://github.com/endlesskwazar/gse-ai-usage-limits#readme",
+    "devDependencies": {
+        "eslint": "^9.39.2",
+        "eslint-config-prettier": "^10.1.8",
+        "eslint-plugin-prettier": "^5.5.5",
+        "globals": "^17.0.0",
+        "prettier": "^3.8.0"
+    }
 }
