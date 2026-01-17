@@ -1,7 +1,5 @@
 import Clutter from 'gi://Clutter';
 import St from 'gi://St';
-import Soup from 'gi://Soup';
-import GLib from 'gi://GLib';
 import { Extension } from 'resource:///org/gnome/shell/extensions/extension.js';
 import * as Main from 'resource:///org/gnome/shell/ui/main.js';
 import * as PanelMenu from 'resource:///org/gnome/shell/ui/panelMenu.js';
@@ -10,79 +8,18 @@ import * as PopupMenu from 'resource:///org/gnome/shell/ui/popupMenu.js';
 import CircularProgress from './widgets/CircularProgress.js';
 import ProviderDropdown from './widgets/ProviderDropdown.js';
 import RefreshButton from './widgets/RefreshButton.js';
+import ProviderConfig from './providers/ProviderConfig.js';
+import ApiService from './services/ApiService.js';
 
-const PROVIDERS = {
-    synthetic: {
-        name: 'Synthetic',
-        settingKey: 'synthetic-api-key',
-        enabledKey: 'synthetic-enabled',
-        url: 'https://api.synthetic.new/v2/quotas',
-        parse: data => {
-            if (data.subscription) {
-                return {
-                    limit: data.subscription.limit,
-                    used: data.subscription.requests,
-                    renewsAt: data.subscription.renewsAt
-                };
-            }
-            throw new Error('Invalid format');
-        }
-    },
-    chutes: {
-        name: 'Chutes.ai',
-        settingKey: 'chutes-api-key',
-        enabledKey: 'chutes-enabled',
-        url: 'https://api.chutes.ai/users/me/quota_usage/me',
-        parse: data => {
-            console.log(`[AI-Usage] Chutes response: ${JSON.stringify(data)}`);
-
-            const limit = data.quota || 0;
-            const used = data.used || 0;
-
-            // Calculate next 00:00 UTC
-            const now = new Date();
-            const nextReset = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() + 1));
-
-            return {
-                limit: limit,
-                used: used,
-                renewsAt: nextReset.toISOString()
-            };
-        }
-    },
-    nanogpt: {
-        name: 'Nano-GPT',
-        settingKey: 'nano-gpt-api-key',
-        enabledKey: 'nano-gpt-enabled',
-        url: 'https://nano-gpt.com/api/subscription/v1/usage',
-        parse: (data, settings) => {
-            // Check user preference for tracking mode
-            let showDaily = true;
-            if (settings) {
-                showDaily = settings.get_boolean('nano-gpt-show-daily-limit');
-            }
-
-            // Fallback if data structure is unexpected
-            if (!data.limits || !data.daily || !data.monthly) {
-                throw new Error('Invalid format');
-            }
-
-            const target = showDaily ? data.daily : data.monthly;
-            const limit = (showDaily ? data.limits.daily : data.limits.monthly) || 0;
-
-            return {
-                limit: limit,
-                used: target.used,
-                renewsAt: target.resetAt
-            };
-        }
-    }
-};
+const PROVIDERS = ProviderConfig.getProviders();
 
 export default class AIUsageExtension extends Extension {
     enable() {
         this._settings = this.getSettings();
-        this._providers = Object.keys(PROVIDERS);
+        this._providers = ProviderConfig.getProviderKeys();
+
+        // Initialize API service
+        this._apiService = new ApiService(this._settings);
 
         // Create the Panel Menu Button
         this._indicator = new PanelMenu.Button(0.0, this.metadata.name, false);
@@ -152,7 +89,7 @@ export default class AIUsageExtension extends Extension {
         // 1. Refresh Button
         this._refreshButton = new RefreshButton();
         this._refreshButton.connect('refresh-clicked', () => {
-            this._loadQuota(this._currentProviderKey);
+            this._loadQuota(this._currentProviderKey).catch(err => console.error('Failed to load quota:', err));
         });
         this._headerBar.add_child(this._refreshButton);
 
@@ -190,7 +127,7 @@ export default class AIUsageExtension extends Extension {
         // Listen for menu open to refresh limits
         this._menuOpenSignalId = this._indicator.menu.connect('open-state-changed', (menu, open) => {
             if (open && this._currentProviderKey && this._isProviderActive(this._currentProviderKey)) {
-                this._loadQuota(this._currentProviderKey);
+                this._loadQuota(this._currentProviderKey).catch(err => console.error('Failed to load quota:', err));
             }
         });
 
@@ -213,7 +150,8 @@ export default class AIUsageExtension extends Extension {
     }
 
     _isProviderActive(key) {
-        const provider = PROVIDERS[key];
+        const provider = ProviderConfig.getProvider(key);
+        if (!provider) return false;
         const apiKey = this._settings.get_string(provider.settingKey);
         const enabled = this._settings.get_boolean(provider.enabledKey);
         return apiKey && apiKey.length > 0 && enabled;
@@ -268,15 +206,15 @@ export default class AIUsageExtension extends Extension {
         this._updateProvidersState();
 
         if (providerKey) {
-            this._loadQuota(providerKey);
+            this._loadQuota(providerKey).catch(err => console.error('Failed to load quota:', err));
         } else {
             // Show no providers message
             this._showNoProvidersMessage();
         }
     }
 
-    _loadQuota(providerKey) {
-        const provider = PROVIDERS[providerKey];
+    async _loadQuota(providerKey) {
+        const provider = ProviderConfig.getProvider(providerKey);
         if (!provider) return;
 
         const apiKey = this._settings.get_string(provider.settingKey);
@@ -320,96 +258,76 @@ export default class AIUsageExtension extends Extension {
 
         this._contentArea.add_child(detailsBox);
 
-        // Perform async request
-        const session = new Soup.Session();
-        const message = Soup.Message.new('GET', provider.url);
-        message.request_headers.append('Authorization', `Bearer ${apiKey}`);
+        // Perform async request using ApiService
+        try {
+            const parsedData = await this._apiService.fetchQuota(provider, apiKey);
 
-        session.send_and_read_async(message, GLib.PRIORITY_DEFAULT, null, (session, result) => {
-            if (!this._indicator) return; // Extension disabled/destroyed
+            // Check if extension is still active
+            if (!this._indicator) return;
 
-            try {
-                // Clear "Loading..."
-                this._contentArea.destroy_all_children();
+            // Clear "Loading..."
+            this._contentArea.destroy_all_children();
 
-                const bytes = session.send_and_read_finish(result);
+            const limit = parsedData.limit;
+            const requests = parsedData.used;
+            const renewsAt = parsedData.renewsAt;
 
-                if (message.status_code !== 200) {
-                    let errLabel = new St.Label({
-                        text: `Error: HTTP ${message.status_code}`,
-                        style: 'color: red;',
-                        x_align: Clutter.ActorAlign.CENTER
-                    });
-                    this._contentArea.add_child(errLabel);
-                    return;
-                }
+            let renewsStr = '';
+            if (renewsAt && requests > 0) {
+                const renewsDate = new Date(renewsAt);
+                const diffMs = renewsDate - new Date();
+                const diffHrs = Math.floor(diffMs / (1000 * 60 * 60));
+                const diffMins = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
+                renewsStr = diffMs > 0 ? `${diffHrs}h ${diffMins}m` : 'Now';
+            }
 
-                const decoder = new TextDecoder();
-                const responseBody = decoder.decode(bytes.get_data());
-                const data = JSON.parse(responseBody);
+            let percentage = 0;
+            if (limit > 0) {
+                percentage = requests / limit;
+            }
 
-                const parsedData = provider.parse(data, this._settings);
-                const limit = parsedData.limit;
-                const requests = parsedData.used;
-                const renewsAt = parsedData.renewsAt;
+            // Display Progress
+            let progressWidget = new CircularProgress(percentage);
+            this._contentArea.add_child(progressWidget);
 
-                let renewsStr = '';
-                if (renewsAt && requests > 0) {
-                    const renewsDate = new Date(renewsAt);
-                    const diffMs = renewsDate - new Date();
-                    const diffHrs = Math.floor(diffMs / (1000 * 60 * 60));
-                    const diffMins = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
-                    renewsStr = diffMs > 0 ? `${diffHrs}h ${diffMins}m` : 'Now';
-                }
+            // Display Details
+            let detailsBox = new St.BoxLayout({
+                vertical: true,
+                style: 'padding-top: 6px; spacing: 4px;',
+                x_align: Clutter.ActorAlign.CENTER
+            });
 
-                let percentage = 0;
-                if (limit > 0) {
-                    percentage = requests / limit;
-                }
-
-                // Display Progress
-                let progressWidget = new CircularProgress(percentage);
-                this._contentArea.add_child(progressWidget);
-
-                // Display Details
-                let detailsBox = new St.BoxLayout({
-                    vertical: true,
-                    style: 'padding-top: 6px; spacing: 4px;',
+            detailsBox.add_child(
+                new St.Label({
+                    text: `Used: ${requests} / ${limit}`,
                     x_align: Clutter.ActorAlign.CENTER
-                });
+                })
+            );
 
+            if (renewsStr) {
                 detailsBox.add_child(
                     new St.Label({
-                        text: `Used: ${requests} / ${limit}`,
+                        text: `Renews in: ${renewsStr}`,
+                        style: 'font-size: 0.85em; opacity: 0.7;',
                         x_align: Clutter.ActorAlign.CENTER
                     })
                 );
-
-                if (renewsStr) {
-                    detailsBox.add_child(
-                        new St.Label({
-                            text: `Renews in: ${renewsStr}`,
-                            style: 'font-size: 0.85em; opacity: 0.7;',
-                            x_align: Clutter.ActorAlign.CENTER
-                        })
-                    );
-                }
-
-                this._contentArea.add_child(detailsBox);
-            } catch (e) {
-                // Determine if this._contentArea is still valid to write to
-                if (this._contentArea && this._contentArea.get_parent()) {
-                    this._contentArea.destroy_all_children();
-                    let errLabel = new St.Label({
-                        text: `Error: ${e.message}`,
-                        style: 'color: red; padding: 10px;',
-                        x_align: Clutter.ActorAlign.CENTER
-                    });
-                    this._contentArea.add_child(errLabel);
-                }
-                console.error(e);
             }
-        });
+
+            this._contentArea.add_child(detailsBox);
+        } catch (e) {
+            // Determine if this._contentArea is still valid to write to
+            if (this._contentArea && this._contentArea.get_parent()) {
+                this._contentArea.destroy_all_children();
+                let errLabel = new St.Label({
+                    text: `Error: ${e.message}`,
+                    style: 'color: red; padding: 10px;',
+                    x_align: Clutter.ActorAlign.CENTER
+                });
+                this._contentArea.add_child(errLabel);
+            }
+            console.error(e);
+        }
     }
 
     disable() {
@@ -433,6 +351,10 @@ export default class AIUsageExtension extends Extension {
         if (this._indicator) {
             this._indicator.destroy();
             this._indicator = null;
+        }
+        if (this._apiService) {
+            this._apiService.destroy();
+            this._apiService = null;
         }
         this._settings = null;
         this._headerBar = null;
