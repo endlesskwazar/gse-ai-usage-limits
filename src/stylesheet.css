@@ -100,3 +100,7 @@
     padding: 4px 12px;
     opacity: 0.6;
 }
+
+.ai-usage-provider-dropdown-container {
+    x_expand: true;
+}

@@ -8,6 +8,7 @@ import * as PanelMenu from 'resource:///org/gnome/shell/ui/panelMenu.js';
 import * as PopupMenu from 'resource:///org/gnome/shell/ui/popupMenu.js';
 
 import CircularProgress from './widgets/CircularProgress.js';
+import ProviderDropdown from './widgets/ProviderDropdown.js';
 
 const PROVIDERS = {
     synthetic: {
@@ -165,84 +166,16 @@ export default class AIUsageExtension extends Extension {
         });
         this._headerBar.add_child(refreshBtn);
 
-        // 2. Provider Container (Button + Dropdown)
-        this._providerContainer = new St.BoxLayout({
-            vertical: true,
-            x_expand: true,
-            y_align: Clutter.ActorAlign.START
+        // 2. Provider Dropdown Widget
+        this._providerDropdown = new ProviderDropdown({
+            providers: PROVIDERS,
+            settings: this._settings,
+            currentProviderKey: this._currentProviderKey
         });
-
-        this._providerBtn = new St.Button({
-            style_class: 'ai-usage-provider-button',
-            can_focus: true,
-            x_expand: true,
-            y_align: Clutter.ActorAlign.CENTER
+        this._providerDropdown.connect('provider-changed', (widget, providerKey) => {
+            this._selectProvider(providerKey);
         });
-
-        // Layout for Provider Button: [ Label (Expand) ... Icon ]
-        let providerBtnLayout = new St.BoxLayout({
-            x_expand: true
-        });
-
-        this._providerLabel = new St.Label({
-            text: '', // Set on init
-            y_align: Clutter.ActorAlign.CENTER,
-            x_expand: true
-        });
-
-        let arrowIcon = new St.Icon({
-            icon_name: 'pan-down-symbolic',
-            style_class: 'popup-menu-icon'
-        });
-
-        providerBtnLayout.add_child(this._providerLabel);
-        providerBtnLayout.add_child(arrowIcon);
-        this._providerBtn.set_child(providerBtnLayout);
-
-        this._providerBtn.connect('clicked', () => {
-            if (this._providerBtn.reactive) {
-                this._dropdownBox.visible = !this._dropdownBox.visible;
-                // Update rounding based on visibility
-                if (this._dropdownBox.visible) {
-                    this._providerBtn.add_style_class_name('ai-usage-provider-button-open');
-                } else {
-                    this._providerBtn.remove_style_class_name('ai-usage-provider-button-open');
-                }
-            }
-        });
-
-        // Dropdown Area (Hidden by default)
-        this._dropdownBox = new St.BoxLayout({
-            vertical: true,
-            visible: false,
-            style_class: 'ai-usage-dropdown-box'
-        });
-
-        this._providerItems = {};
-        this._providers.forEach(key => {
-            let itemBtn = new St.Button({
-                style_class: 'ai-usage-dropdown-item',
-                x_align: Clutter.ActorAlign.FILL,
-                x_expand: true,
-                can_focus: true
-            });
-            let itemLabel = new St.Label({
-                text: PROVIDERS[key].name,
-                x_align: Clutter.ActorAlign.START
-            });
-            itemBtn.set_child(itemLabel);
-
-            itemBtn.connect('clicked', () => {
-                this._selectProvider(key);
-                this._providerBtn.remove_style_class_name('ai-usage-provider-button-open');
-            });
-            this._dropdownBox.add_child(itemBtn);
-            this._providerItems[key] = itemBtn;
-        });
-
-        this._providerContainer.add_child(this._providerBtn);
-        this._providerContainer.add_child(this._dropdownBox);
-        this._headerBar.add_child(this._providerContainer);
+        this._headerBar.add_child(this._providerDropdown);
 
         // Content Area
         this._contentArea = new St.BoxLayout({
@@ -297,37 +230,11 @@ export default class AIUsageExtension extends Extension {
     }
 
     _updateProvidersState() {
-        const activeProviders = this._providers.filter(key => this._isProviderActive(key));
-
-        // Update dropdown visibility
-        this._providers.forEach(key => {
-            if (this._providerItems[key]) {
-                const isActive = this._isProviderActive(key);
-                // Visible in dropdown if it is active AND it is NOT the currently selected provider
-                this._providerItems[key].visible = isActive && key !== this._currentProviderKey;
-            }
-        });
-
-        // Disable provider button if there's only one active provider
-        if (this._providerBtn) {
-            if (activeProviders.length === 1) {
-                // Only one provider available, disable the button
-                this._providerBtn.reactive = false;
-                this._providerBtn.can_focus = false;
-                this._providerBtn.add_style_class_name('ai-usage-provider-button-disabled');
-                this._providerBtn.remove_style_class_name('ai-usage-provider-button');
-                // Hide dropdown if it's currently visible
-                if (this._dropdownBox && this._dropdownBox.visible) {
-                    this._dropdownBox.visible = false;
-                }
-            } else {
-                // Multiple providers or none, enable the button
-                this._providerBtn.reactive = true;
-                this._providerBtn.can_focus = true;
-                this._providerBtn.add_style_class_name('ai-usage-provider-button');
-                this._providerBtn.remove_style_class_name('ai-usage-provider-button-disabled');
-            }
+        if (this._providerDropdown) {
+            this._providerDropdown.update();
         }
+
+        const activeProviders = this._providers.filter(key => this._isProviderActive(key));
 
         // Check if current provider is still valid
         if (this._currentProviderKey && !this._isProviderActive(this._currentProviderKey)) {
@@ -337,7 +244,9 @@ export default class AIUsageExtension extends Extension {
                 this._selectProvider(activeProviders[0]);
             } else {
                 this._currentProviderKey = null;
-                if (this._providerLabel) this._providerLabel.text = 'No Providers';
+                if (this._providerDropdown) {
+                    this._providerDropdown.setCurrentProvider(null);
+                }
                 this._showNoProvidersMessage();
             }
         } else if (!this._currentProviderKey && activeProviders.length > 0) {
@@ -357,24 +266,23 @@ export default class AIUsageExtension extends Extension {
             });
             this._contentArea.add_child(msg);
         }
-        if (this._providerLabel) {
-            this._providerLabel.text = 'Select Provider';
-        }
     }
 
     _selectProvider(providerKey) {
         this._currentProviderKey = providerKey;
-        if (this._providerLabel) {
-            this._providerLabel.text = PROVIDERS[providerKey].name;
-        }
-        if (this._dropdownBox) {
-            this._dropdownBox.visible = false;
+        if (this._providerDropdown) {
+            this._providerDropdown.setCurrentProvider(providerKey);
         }
 
         // Update dropdown visibility logic
         this._updateProvidersState();
 
-        this._loadQuota(providerKey);
+        if (providerKey) {
+            this._loadQuota(providerKey);
+        } else {
+            // Show no providers message
+            this._showNoProvidersMessage();
+        }
     }
 
     _loadQuota(providerKey) {
@@ -538,8 +446,7 @@ export default class AIUsageExtension extends Extension {
         }
         this._settings = null;
         this._headerBar = null;
-        this._dropdownBox = null;
-        this._providerItems = null;
+        this._providerDropdown = null;
         this._contentArea = null;
     }
 }
