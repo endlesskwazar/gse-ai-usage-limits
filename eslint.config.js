@@ -41,7 +41,8 @@ export default [
         },
         rules: {
             'prettier/prettier': 'error',
-            'no-unused-vars': ['warn', { argsIgnorePattern: '^_' }]
+            'no-unused-vars': ['warn', { argsIgnorePattern: '^_' }],
+            semi: 'error'
         }
     },
     prettierConfig
