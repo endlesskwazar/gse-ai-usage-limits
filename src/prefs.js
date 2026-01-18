@@ -86,12 +86,7 @@ export default class AIUsagePreferences extends ExtensionPreferences {
             const isCurrentlyEnabled = settings.get_boolean(provider.enabledKey);
 
             enabledRow.sensitive = hasApiKey;
-
-            if (hasApiKey && !isCurrentlyEnabled) {
-                settings.set_boolean(provider.enabledKey, true);
-            }
-
-            enabledRow.active = settings.get_boolean(provider.enabledKey);
+            enabledRow.active = isCurrentlyEnabled;
         };
 
         const apiKeyChangedId = settings.connect(`changed::${provider.settingKey}`, () => {
