@@ -8,6 +8,7 @@ import * as PopupMenu from 'resource:///org/gnome/shell/ui/popupMenu.js';
 import CircularProgress from './widgets/CircularProgress.js';
 import ProviderDropdown from './widgets/ProviderDropdown.js';
 import RefreshButton from './widgets/RefreshButton.js';
+import ContextMenu from './widgets/ContextMenu.js';
 import ApiService from './services/ApiService.js';
 import ProviderStateManager from './services/ProviderStateManager.js';
 
@@ -41,25 +42,10 @@ export default class AIUsageExtension extends Extension {
         this._indicator.add_child(panelBox);
 
         // --- Context Menu (Right Click) ---
-        this._contextMenu = new PopupMenu.PopupMenu(this._indicator, 0.5, St.Side.TOP);
-        Main.layoutManager.uiGroup.add_child(this._contextMenu.actor);
-        this._contextMenu.actor.hide();
-
-        // Add a menu manager to handle auto-closing
-        this._menuManager = new PopupMenu.PopupMenuManager(this._indicator);
-        this._menuManager.addMenu(this._contextMenu);
-
-        let settingsItem = new PopupMenu.PopupMenuItem('Settings');
-        settingsItem.connect('activate', () => {
-            this.openPreferences();
-        });
-        this._contextMenu.addMenuItem(settingsItem);
-
-        let closeItem = new PopupMenu.PopupMenuItem('Close Extension');
-        closeItem.connect('activate', () => {
+        this._contextMenu = new ContextMenu(this._indicator, () => this.openPreferences());
+        this._contextMenu.connect('close-extension', () => {
             Main.extensionManager.disableExtension(this.uuid);
         });
-        this._contextMenu.addMenuItem(closeItem);
 
         // Handle Clicks
         this._indicator.connect('button-press-event', (actor, event) => {
@@ -331,9 +317,6 @@ export default class AIUsageExtension extends Extension {
             this._menuOpenSignalId = null;
         }
 
-        if (this._menuManager) {
-            this._menuManager = null;
-        }
         if (this._contextMenu) {
             this._contextMenu.destroy();
             this._contextMenu = null;
