@@ -26,8 +26,22 @@ const RefreshButton = GObject.registerClass(
             );
 
             this.connect('clicked', () => {
-                this.emit('refresh-clicked');
+                if (this.reactive) {
+                    this.emit('refresh-clicked');
+                }
             });
+        }
+
+        setEnabled(enabled) {
+            if (enabled) {
+                this.reactive = true;
+                this.can_focus = true;
+                this.remove_style_class_name('ai-usage-icon-button-disabled');
+            } else {
+                this.reactive = false;
+                this.can_focus = false;
+                this.add_style_class_name('ai-usage-icon-button-disabled');
+            }
         }
     }
 );

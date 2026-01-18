@@ -49,6 +49,10 @@
     color: #6bd2ff;
 }
 
+.ai-usage-icon-button-disabled {
+    opacity: 0.4;
+}
+
 .ai-usage-provider-button {
     background-color: rgba(255, 255, 255, 0.05);
     border-radius: 8px;
@@ -103,4 +107,14 @@
 
 .ai-usage-provider-dropdown-container {
     x_expand: true;
+}
+
+.ai-usage-settings-link {
+    color: #6bd2ff;
+    padding: 4px 8px;
+}
+
+.ai-usage-settings-link:hover {
+    color: #ffffff;
+    text-decoration: underline;
 }

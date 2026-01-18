@@ -122,8 +122,8 @@ const ProviderDropdown = GObject.registerClass(
                 }
             });
 
-            // Disable provider button if there's only one active provider
-            if (activeProviders.length === 1) {
+            // Disable provider button if there's zero or one active provider
+            if (activeProviders.length <= 1) {
                 // Only one provider available, disable the button
                 this._providerBtn.reactive = false;
                 this._providerBtn.can_focus = false;

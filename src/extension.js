@@ -118,14 +118,17 @@ export default class AIUsageExtension extends Extension {
         // Listen for provider changes from ProviderStateManager
         this._providerChangedSignalId = this._providerStateManager.connect('provider-changed', (psm, providerKey) => {
             if (providerKey) {
+                this._refreshButton.setEnabled(true);
                 this._loadQuota(providerKey).catch(err => console.error('Failed to load quota:', err));
             } else {
+                this._refreshButton.setEnabled(false);
                 this._showNoProvidersMessage();
             }
         });
 
         // Listen for current provider becoming invalid
         this._currentProviderInvalidSignalId = this._providerStateManager.connect('current-provider-invalid', () => {
+            this._refreshButton.setEnabled(false);
             this._showNoProvidersMessage();
         });
 
@@ -134,7 +137,11 @@ export default class AIUsageExtension extends Extension {
             if (open) {
                 const currentProvider = this._providerStateManager.getCurrentProvider();
                 if (currentProvider && this._providerStateManager.isProviderActive(currentProvider)) {
+                    this._refreshButton.setEnabled(true);
                     this._loadQuota(currentProvider).catch(err => console.error('Failed to load quota:', err));
+                } else {
+                    this._refreshButton.setEnabled(false);
+                    this._showNoProvidersMessage();
                 }
             }
         });
@@ -146,13 +153,40 @@ export default class AIUsageExtension extends Extension {
     _showNoProvidersMessage() {
         if (this._contentArea) {
             this._contentArea.destroy_all_children();
-            let msg = new St.Label({
-                text: 'No active providers.\nConfigure in Settings.',
-                style_class: 'error-label',
-                style: 'text-align: center; padding: 20px;',
+
+            let msgBox = new St.BoxLayout({
+                vertical: true,
+                style: 'padding: 20px; spacing: 4px;',
                 x_align: Clutter.ActorAlign.CENTER
             });
-            this._contentArea.add_child(msg);
+
+            let msgLabel = new St.Label({
+                text: 'No configured providers.\nClick',
+                style_class: 'error-label',
+                style: 'text-align: center;',
+                x_align: Clutter.ActorAlign.CENTER
+            });
+            msgBox.add_child(msgLabel);
+
+            let settingsButton = new St.Button({
+                label: 'Settings',
+                style_class: 'ai-usage-settings-link',
+                x_align: Clutter.ActorAlign.CENTER
+            });
+            settingsButton.connect('clicked', () => {
+                this.openPreferences();
+            });
+            msgBox.add_child(settingsButton);
+
+            let clickLabel = new St.Label({
+                text: 'to configure',
+                style_class: 'error-label',
+                style: 'text-align: center;',
+                x_align: Clutter.ActorAlign.CENTER
+            });
+            msgBox.add_child(clickLabel);
+
+            this._contentArea.add_child(msgBox);
         }
     }
 
