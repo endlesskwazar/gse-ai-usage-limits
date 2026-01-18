@@ -3,21 +3,23 @@ import Gio from 'gi://Gio';
 import Gtk from 'gi://Gtk';
 import { ExtensionPreferences } from 'resource:///org/gnome/Shell/Extensions/js/extensions/prefs.js';
 import ProviderConfig from './providers/ProviderConfig.js';
+import * as Locale from './locale.js';
 
 export default class AIUsagePreferences extends ExtensionPreferences {
     fillPreferencesWindow(window) {
+        Locale.init(this);
         const settings = this.getSettings();
         const providers = ProviderConfig.getProviders();
         const providerKeys = Object.keys(providers);
 
         const page = new Adw.PreferencesPage();
-        page.title = 'Providers';
+        page.title = Locale.gettext('Providers');
         page.iconName = 'applications-symbolic';
         window.add(page);
 
         const providersGroup = new Adw.PreferencesGroup({
-            title: 'Providers',
-            description: 'Select a provider to configure'
+            title: Locale.gettext('Providers'),
+            description: Locale.gettext('Select a provider to configure')
         });
         page.add(providersGroup);
 
@@ -54,24 +56,24 @@ export default class AIUsagePreferences extends ExtensionPreferences {
         dialog.add(page);
 
         const group = new Adw.PreferencesGroup({
-            title: 'Configuration'
+            title: Locale.gettext('Configuration')
         });
         page.add(group);
 
         const apiKeyRow = new Adw.PasswordEntryRow({
-            title: 'API Key'
+            title: Locale.gettext('API Key')
         });
         group.add(apiKeyRow);
 
         const enabledRow = new Adw.SwitchRow({
-            title: 'Enable Provider'
+            title: Locale.gettext('Enable Provider')
         });
         group.add(enabledRow);
 
         if (provider.hasDailyToggle) {
             const dailyToggleRow = new Adw.SwitchRow({
-                title: 'Show Daily Limit',
-                subtitle: 'Toggle to switch between Daily (2000) and Monthly (60000) limits'
+                title: Locale.gettext('Show Daily Limit'),
+                subtitle: Locale.gettext('Toggle to switch between Daily (2000) and Monthly (60000) limits')
             });
             group.add(dailyToggleRow);
 

@@ -9,7 +9,8 @@
         "format": "prettier --write .",
         "test": "echo \"Error: no test specified\" && exit 1",
         "generate-schema": "node scripts/generate-schema.js",
-        "validate-schema": "node scripts/validate-schema.js"
+        "validate-schema": "node scripts/validate-schema.js",
+        "compile-translations": "node scripts/compile-translations.js"
     },
     "repository": {
         "type": "git",

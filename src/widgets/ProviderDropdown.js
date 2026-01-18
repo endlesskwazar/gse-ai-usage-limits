@@ -1,6 +1,7 @@
 import Clutter from 'gi://Clutter';
 import GObject from 'gi://GObject';
 import St from 'gi://St';
+import * as Locale from '../locale.js';
 
 const ProviderDropdown = GObject.registerClass(
     {
@@ -50,7 +51,7 @@ const ProviderDropdown = GObject.registerClass(
             });
 
             this._providerLabel = new St.Label({
-                text: 'Select Provider',
+                text: Locale.gettext('Select Provider'),
                 y_align: Clutter.ActorAlign.CENTER,
                 x_expand: true
             });
@@ -148,7 +149,7 @@ const ProviderDropdown = GObject.registerClass(
                 // ProviderStateManager will handle switching to another active provider
                 // We just need to update our display when it emits provider-changed
                 this._currentProviderKey = null;
-                if (this._providerLabel) this._providerLabel.text = 'No Providers';
+                if (this._providerLabel) this._providerLabel.text = Locale.gettext('No Providers');
             } else if (!this._currentProviderKey && activeProviders.length > 0) {
                 // If we were in "No Providers" state but now have one
                 // ProviderStateManager will emit provider-changed, which will update our display
@@ -163,7 +164,7 @@ const ProviderDropdown = GObject.registerClass(
                 if (providerKey && this._providers[providerKey]) {
                     this._providerLabel.text = this._providers[providerKey].name;
                 } else {
-                    this._providerLabel.text = 'No Providers';
+                    this._providerLabel.text = Locale.gettext('No Providers');
                 }
             }
             if (this._dropdownBox) {

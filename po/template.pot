@@ -1,0 +1,151 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the PACKAGE package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-01-18 12:00+0000\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#: src/extension.js:172
+msgid "API Key missing.\nPlease set it in Extension Settings."
+msgstr ""
+
+#: src/extension.js:182
+msgid "Loading..."
+msgstr ""
+
+#: src/extension.js:243
+msgid "Used"
+msgstr ""
+
+#: src/extension.js:251
+msgid "Renews in"
+msgstr ""
+
+#: src/extension.js:264
+msgid "Error"
+msgstr ""
+
+#: src/prefs.js:14
+msgid "Providers"
+msgstr ""
+
+#: src/prefs.js:20
+msgid "Select a provider to configure"
+msgstr ""
+
+#: src/prefs.js:57
+msgid "Configuration"
+msgstr ""
+
+#: src/prefs.js:62
+msgid "API Key"
+msgstr ""
+
+#: src/prefs.js:67
+msgid "Enable Provider"
+msgstr ""
+
+#: src/prefs.js:73
+msgid "Show Daily Limit"
+msgstr ""
+
+#: src/prefs.js:74
+msgid "Toggle to switch between Daily (2000) and Monthly (60000) limits"
+msgstr ""
+
+#: src/providers/ProviderConfig.js:16
+msgctxt "provider"
+msgid "AI service provider"
+msgstr ""
+
+#: src/providers/ProviderConfig.js:35
+msgid "The API key for the Synthetic service."
+msgstr ""
+
+#: src/providers/ProviderConfig.js:41
+msgid "Toggle to enable/disable Synthetic provider in the menu."
+msgstr ""
+
+#: src/providers/ProviderConfig.js:35
+msgid "Synthetic API Key"
+msgstr ""
+
+#: src/providers/ProviderConfig.js:40
+msgid "Enable Synthetic Provider"
+msgstr ""
+
+#: src/providers/ProviderConfig.js:71
+msgid "The API key for the Chutes.ai service."
+msgstr ""
+
+#: src/providers/ProviderConfig.js:77
+msgid "Toggle to enable/disable Chutes.ai provider in the menu."
+msgstr ""
+
+#: src/providers/ProviderConfig.js:70
+msgid "Chutes.ai API Key"
+msgstr ""
+
+#: src/providers/ProviderConfig.js:76
+msgid "Enable Chutes.ai Provider"
+msgstr ""
+
+#: src/providers/ProviderConfig.js:116
+msgid "The API key for the Nano-GPT service."
+msgstr ""
+
+#: src/providers/ProviderConfig.js:122
+msgid "Toggle to enable/disable Nano-GPT provider in the menu."
+msgstr ""
+
+#: src/providers/ProviderConfig.js:128
+msgid "If true, shows the daily limit (2000). If false, shows the monthly limit (60000)."
+msgstr ""
+
+#: src/providers/ProviderConfig.js:115
+msgid "Nano-GPT API Key"
+msgstr ""
+
+#: src/providers/ProviderConfig.js:121
+msgid "Enable Nano-GPT Provider"
+msgstr ""
+
+#: src/providers/ProviderConfig.js:127
+msgid "Show Daily Limit for Nano-GPT"
+msgstr ""
+
+#: src/widgets/NoProvidersMsgBox.js:20
+msgid "No configured providers.\nClick"
+msgstr ""
+
+#: src/widgets/NoProvidersMsgBox.js:38
+msgid "to configure"
+msgstr ""
+
+#: src/widgets/ContextMenu.js:29 src/widgets/NoProvidersMsgBox.js:28
+msgid "Settings"
+msgstr ""
+
+#: src/widgets/ContextMenu.js:38
+msgid "Close Extension"
+msgstr ""
+
+#: src/widgets/ProviderDropdown.js:53
+msgid "Select Provider"
+msgstr ""
+
+#: src/widgets/ProviderDropdown.js:151 src/widgets/ProviderDropdown.js:166
+msgid "No Providers"
+msgstr ""

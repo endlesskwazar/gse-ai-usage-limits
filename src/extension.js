@@ -12,9 +12,12 @@ import ContextMenu from './widgets/ContextMenu.js';
 import NoProvidersMsgBox from './widgets/NoProvidersMsgBox.js';
 import ApiService from './services/ApiService.js';
 import ProviderStateManager from './services/ProviderStateManager.js';
+import * as Locale from './locale.js';
 
 export default class AIUsageExtension extends Extension {
     enable() {
+        Locale.init(this);
+
         // Initialize ProviderStateManager
         this._providerStateManager = new ProviderStateManager(this.getSettings());
 
@@ -169,7 +172,7 @@ export default class AIUsageExtension extends Extension {
             // This case should theoretically be handled by provider state filtering,
             // but keep it as a fallback for safety.
             let errorLabel = new St.Label({
-                text: 'API Key missing.\nPlease set it in Extension Settings.',
+                text: Locale.gettext('API Key missing.\nPlease set it in Extension Settings.'),
                 style_class: 'error-label',
                 style: 'text-align: center; padding: 20px;',
                 x_align: Clutter.ActorAlign.CENTER
@@ -179,7 +182,7 @@ export default class AIUsageExtension extends Extension {
         }
 
         // Skeleton / Loading State
-        let progressWidget = new CircularProgress(0, 'Loading...');
+        let progressWidget = new CircularProgress(0, Locale.gettext('Loading...'));
         this._contentArea.add_child(progressWidget);
 
         let detailsBox = new St.BoxLayout({
@@ -240,7 +243,7 @@ export default class AIUsageExtension extends Extension {
 
             detailsBox.add_child(
                 new St.Label({
-                    text: `Used: ${requests} / ${limit}`,
+                    text: `${Locale.gettext('Used')}: ${requests} / ${limit}`,
                     x_align: Clutter.ActorAlign.CENTER
                 })
             );
@@ -248,7 +251,7 @@ export default class AIUsageExtension extends Extension {
             if (renewsStr) {
                 detailsBox.add_child(
                     new St.Label({
-                        text: `Renews in: ${renewsStr}`,
+                        text: `${Locale.gettext('Renews in')}: ${renewsStr}`,
                         style: 'font-size: 0.85em; opacity: 0.7;',
                         x_align: Clutter.ActorAlign.CENTER
                     })
@@ -261,7 +264,7 @@ export default class AIUsageExtension extends Extension {
             if (this._contentArea && this._contentArea.get_parent()) {
                 this._contentArea.destroy_all_children();
                 let errLabel = new St.Label({
-                    text: `Error: ${e.message}`,
+                    text: `${Locale.gettext('Error')}: ${e.message}`,
                     style: 'color: red; padding: 10px;',
                     x_align: Clutter.ActorAlign.CENTER
                 });

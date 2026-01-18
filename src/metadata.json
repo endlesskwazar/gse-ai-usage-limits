@@ -4,5 +4,6 @@
     "uuid": "hello-world@gse-ai-usage-limits.local",
     "shell-version": ["49"],
     "version": 1,
-    "settings-schema": "org.gnome.shell.extensions.ai-usage-limits"
+    "settings-schema": "org.gnome.shell.extensions.ai-usage-limits",
+    "gettext-domain": "gse-ai-usage-limits"
 }

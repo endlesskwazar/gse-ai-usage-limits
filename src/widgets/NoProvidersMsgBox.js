@@ -1,6 +1,7 @@
 import Clutter from 'gi://Clutter';
 import GObject from 'gi://GObject';
 import St from 'gi://St';
+import * as Locale from '../locale.js';
 
 const NoProvidersMsgBox = GObject.registerClass(
     {
@@ -17,7 +18,7 @@ const NoProvidersMsgBox = GObject.registerClass(
             });
 
             let msgLabel = new St.Label({
-                text: 'No configured providers.\nClick',
+                text: Locale.gettext('No configured providers.\nClick'),
                 style_class: 'error-label',
                 style: 'text-align: center;',
                 x_align: Clutter.ActorAlign.CENTER
@@ -25,7 +26,7 @@ const NoProvidersMsgBox = GObject.registerClass(
             this.add_child(msgLabel);
 
             let settingsButton = new St.Button({
-                label: 'Settings',
+                label: Locale.gettext('Settings'),
                 style_class: 'ai-usage-settings-link',
                 x_align: Clutter.ActorAlign.CENTER
             });
@@ -35,7 +36,7 @@ const NoProvidersMsgBox = GObject.registerClass(
             this.add_child(settingsButton);
 
             let clickLabel = new St.Label({
-                text: 'to configure',
+                text: Locale.gettext('to configure'),
                 style_class: 'error-label',
                 style: 'text-align: center;',
                 x_align: Clutter.ActorAlign.CENTER

@@ -2,6 +2,7 @@
  * Provider Configuration Module
  * Centralizes all provider definitions and their configurations
  */
+import * as Locale from '../locale.js';
 
 export default class ProviderConfig {
     /**
@@ -13,7 +14,7 @@ export default class ProviderConfig {
             synthetic: {
                 id: 'synthetic',
                 name: 'Synthetic',
-                description: 'AI service provider',
+                description: Locale.pgettext('provider', 'AI service provider'),
                 settingKey: 'synthetic-api-key',
                 enabledKey: 'synthetic-enabled',
                 url: 'https://api.synthetic.new/v2/quotas',
@@ -31,21 +32,21 @@ export default class ProviderConfig {
                     apiKey: {
                         type: 's',
                         default: '',
-                        summary: 'Synthetic API Key',
-                        description: 'The API key for the Synthetic service.'
+                        summary: Locale.gettext('Synthetic API Key'),
+                        description: Locale.gettext('The API key for the Synthetic service.')
                     },
                     enabled: {
                         type: 'b',
                         default: true,
-                        summary: 'Enable Synthetic Provider',
-                        description: 'Toggle to enable/disable Synthetic provider in the menu.'
+                        summary: Locale.gettext('Enable Synthetic Provider'),
+                        description: Locale.gettext('Toggle to enable/disable Synthetic provider in the menu.')
                     }
                 }
             },
             chutes: {
                 id: 'chutes',
                 name: 'Chutes.ai',
-                description: 'AI service provider',
+                description: Locale.pgettext('provider', 'AI service provider'),
                 settingKey: 'chutes-api-key',
                 enabledKey: 'chutes-enabled',
                 url: 'https://api.chutes.ai/users/me/quota_usage/me',
@@ -67,21 +68,21 @@ export default class ProviderConfig {
                     apiKey: {
                         type: 's',
                         default: '',
-                        summary: 'Chutes.ai API Key',
-                        description: 'The API key for the Chutes.ai service.'
+                        summary: Locale.gettext('Chutes.ai API Key'),
+                        description: Locale.gettext('The API key for the Chutes.ai service.')
                     },
                     enabled: {
                         type: 'b',
                         default: true,
-                        summary: 'Enable Chutes.ai Provider',
-                        description: 'Toggle to enable/disable Chutes.ai provider in the menu.'
+                        summary: Locale.gettext('Enable Chutes.ai Provider'),
+                        description: Locale.gettext('Toggle to enable/disable Chutes.ai provider in the menu.')
                     }
                 }
             },
             nanogpt: {
                 id: 'nanogpt',
                 name: 'Nano-GPT',
-                description: 'AI service provider',
+                description: Locale.pgettext('provider', 'AI service provider'),
                 settingKey: 'nano-gpt-api-key',
                 enabledKey: 'nano-gpt-enabled',
                 hasDailyToggle: true,
@@ -112,20 +113,22 @@ export default class ProviderConfig {
                     apiKey: {
                         type: 's',
                         default: '',
-                        summary: 'Nano-GPT API Key',
-                        description: 'The API key for the Nano-GPT service.'
+                        summary: Locale.gettext('Nano-GPT API Key'),
+                        description: Locale.gettext('The API key for the Nano-GPT service.')
                     },
                     enabled: {
                         type: 'b',
                         default: true,
-                        summary: 'Enable Nano-GPT Provider',
-                        description: 'Toggle to enable/disable Nano-GPT provider in the menu.'
+                        summary: Locale.gettext('Enable Nano-GPT Provider'),
+                        description: Locale.gettext('Toggle to enable/disable Nano-GPT provider in the menu.')
                     },
                     dailyToggle: {
                         type: 'b',
                         default: true,
-                        summary: 'Show Daily Limit for Nano-GPT',
-                        description: 'If true, shows the daily limit (2000). If false, shows the monthly limit (60000).'
+                        summary: Locale.gettext('Show Daily Limit for Nano-GPT'),
+                        description: Locale.gettext(
+                            'If true, shows the daily limit (2000). If false, shows the monthly limit (60000).'
+                        )
                     }
                 }
             }

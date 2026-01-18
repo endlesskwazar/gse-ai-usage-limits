@@ -2,6 +2,7 @@ import GObject from 'gi://GObject';
 import St from 'gi://St';
 import * as Main from 'resource:///org/gnome/shell/ui/main.js';
 import * as PopupMenu from 'resource:///org/gnome/shell/ui/popupMenu.js';
+import * as Locale from '../locale.js';
 
 const ContextMenu = GObject.registerClass(
     {
@@ -26,7 +27,7 @@ const ContextMenu = GObject.registerClass(
         }
 
         _buildMenuItems() {
-            let settingsItem = new PopupMenu.PopupMenuItem('Settings');
+            let settingsItem = new PopupMenu.PopupMenuItem(Locale.gettext('Settings'));
             settingsItem.connect('activate', () => {
                 if (this._openPreferencesCallback) {
                     this._openPreferencesCallback();
@@ -35,7 +36,7 @@ const ContextMenu = GObject.registerClass(
             });
             this._menu.addMenuItem(settingsItem);
 
-            let closeItem = new PopupMenu.PopupMenuItem('Close Extension');
+            let closeItem = new PopupMenu.PopupMenuItem(Locale.gettext('Close Extension'));
             closeItem.connect('activate', () => {
                 this.emit('close-extension');
             });
