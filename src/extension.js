@@ -21,6 +21,14 @@ export default class AIUsageExtension extends Extension {
 
         // Create the Panel Menu Button
         this._indicator = new PanelMenu.Button(0.0, this.metadata.name, false);
+        this._indicator.menu.destroy();
+
+        this._indicator.menu = new PopupMenu.PopupMenu(this._indicator, 0.5, St.Side.TOP);
+        Main.layoutManager.uiGroup.add_child(this._indicator.menu.actor);
+        this._indicator.menu.actor.add_style_class_name('popup-menu');
+        this._indicator.menu.actor.hide();
+
+        Main.panel.menuManager.addMenu(this._indicator.menu);
 
         // Icon/Text on the panel
         let panelBox = new St.BoxLayout();
@@ -33,7 +41,7 @@ export default class AIUsageExtension extends Extension {
         this._indicator.add_child(panelBox);
 
         // --- Context Menu (Right Click) ---
-        this._contextMenu = new PopupMenu.PopupMenu(this._indicator, 0.0, St.Side.TOP);
+        this._contextMenu = new PopupMenu.PopupMenu(this._indicator, 0.5, St.Side.TOP);
         Main.layoutManager.uiGroup.add_child(this._contextMenu.actor);
         this._contextMenu.actor.hide();
 
@@ -331,6 +339,7 @@ export default class AIUsageExtension extends Extension {
             this._contextMenu = null;
         }
         if (this._indicator) {
+            this._indicator.menu.destroy();
             this._indicator.destroy();
             this._indicator = null;
         }
