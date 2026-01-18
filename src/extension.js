@@ -9,6 +9,7 @@ import CircularProgress from './widgets/CircularProgress.js';
 import ProviderDropdown from './widgets/ProviderDropdown.js';
 import RefreshButton from './widgets/RefreshButton.js';
 import ContextMenu from './widgets/ContextMenu.js';
+import NoProvidersMsgBox from './widgets/NoProvidersMsgBox.js';
 import ApiService from './services/ApiService.js';
 import ProviderStateManager from './services/ProviderStateManager.js';
 
@@ -147,39 +148,8 @@ export default class AIUsageExtension extends Extension {
     _showNoProvidersMessage() {
         if (this._contentArea) {
             this._contentArea.destroy_all_children();
-
-            let msgBox = new St.BoxLayout({
-                vertical: true,
-                style: 'padding: 20px; spacing: 4px;',
-                x_align: Clutter.ActorAlign.CENTER
-            });
-
-            let msgLabel = new St.Label({
-                text: 'No configured providers.\nClick',
-                style_class: 'error-label',
-                style: 'text-align: center;',
-                x_align: Clutter.ActorAlign.CENTER
-            });
-            msgBox.add_child(msgLabel);
-
-            let settingsButton = new St.Button({
-                label: 'Settings',
-                style_class: 'ai-usage-settings-link',
-                x_align: Clutter.ActorAlign.CENTER
-            });
-            settingsButton.connect('clicked', () => {
-                this.openPreferences();
-            });
-            msgBox.add_child(settingsButton);
-
-            let clickLabel = new St.Label({
-                text: 'to configure',
-                style_class: 'error-label',
-                style: 'text-align: center;',
-                x_align: Clutter.ActorAlign.CENTER
-            });
-            msgBox.add_child(clickLabel);
-
+            const msgBox = new NoProvidersMsgBox();
+            msgBox.connect('settings-clicked', () => this.openPreferences());
             this._contentArea.add_child(msgBox);
         }
     }
