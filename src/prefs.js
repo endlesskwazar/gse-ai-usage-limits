@@ -80,7 +80,46 @@ export default class AIUsagePreferences extends ExtensionPreferences {
 
         settings.bind(provider.settingKey, apiKeyRow, 'text', Gio.SettingsBindFlags.DEFAULT);
 
-        settings.bind(provider.enabledKey, enabledRow, 'active', Gio.SettingsBindFlags.DEFAULT);
+        const updateEnabledSwitchState = () => {
+            const apiKey = settings.get_string(provider.settingKey);
+            const hasApiKey = apiKey && apiKey.length > 0;
+            const isCurrentlyEnabled = settings.get_boolean(provider.enabledKey);
+
+            enabledRow.sensitive = hasApiKey;
+
+            if (hasApiKey && !isCurrentlyEnabled) {
+                settings.set_boolean(provider.enabledKey, true);
+            }
+
+            enabledRow.active = settings.get_boolean(provider.enabledKey);
+        };
+
+        const apiKeyChangedId = settings.connect(`changed::${provider.settingKey}`, () => {
+            updateEnabledSwitchState();
+        });
+
+        const enabledChangedId = settings.connect(`changed::${provider.enabledKey}`, () => {
+            enabledRow.active = settings.get_boolean(provider.enabledKey);
+        });
+
+        enabledRow.connect('notify::active', row => {
+            const apiKey = settings.get_string(provider.settingKey);
+            const hasApiKey = apiKey && apiKey.length > 0;
+
+            if (!hasApiKey && row.active) {
+                row.active = false;
+                return;
+            }
+
+            settings.set_boolean(provider.enabledKey, row.active);
+        });
+
+        updateEnabledSwitchState();
+
+        dialog.connect('closed', () => {
+            settings.disconnect(apiKeyChangedId);
+            settings.disconnect(enabledChangedId);
+        });
 
         return dialog;
     }
