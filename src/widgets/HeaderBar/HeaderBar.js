@@ -16,7 +16,7 @@ const HeaderBar = GObject.registerClass(
         }
     },
     class HeaderBar extends St.BoxLayout {
-        _init({ providerStateManager, openPreferences, onRefresh }) {
+        _init({ providerStateManager }) {
             super._init({
                 vertical: false,
                 style_class: 'ai-usage-header-box',
@@ -24,16 +24,11 @@ const HeaderBar = GObject.registerClass(
             });
 
             this._providerStateManager = providerStateManager;
-            this._openPreferences = openPreferences;
-            this._onRefresh = onRefresh;
 
             // Left side: Settings Button
             this._settingsButton = new SettingsButton();
             this._settingsButton.connect('settings-clicked', () => {
                 this.emit('settings-clicked');
-                if (this._openPreferences) {
-                    this._openPreferences();
-                }
             });
             this.add_child(this._settingsButton);
 
@@ -50,9 +45,6 @@ const HeaderBar = GObject.registerClass(
             this._refreshButton = new RefreshButton();
             this._refreshButton.connect('refresh-clicked', () => {
                 this.emit('refresh-clicked');
-                if (this._onRefresh) {
-                    this._onRefresh();
-                }
             });
             this.add_child(this._refreshButton);
 

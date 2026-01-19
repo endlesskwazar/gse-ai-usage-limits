@@ -39,14 +39,7 @@ export default class AIUsageExtension extends Extension {
 
         // Header Bar (Settings + Provider Chooser + Refresh)
         this._headerBar = new HeaderBar({
-            providerStateManager: this._providerStateManager,
-            openPreferences: () => this.openPreferences(),
-            onRefresh: () => {
-                const currentProvider = this._providerStateManager.getCurrentProvider();
-                if (currentProvider) {
-                    this._loadQuota(currentProvider).catch(err => console.error('Failed to load quota:', err));
-                }
-            }
+            providerStateManager: this._providerStateManager
         });
 
         // Connect to HeaderBar signals
