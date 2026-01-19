@@ -4,15 +4,15 @@ import Soup from 'gi://Soup';
 import ProviderStateManager from './ProviderStateManager.js';
 
 export default class ApiService {
-    #providerStateManager;
-    #session;
+    _providerStateManager;
+    _session;
 
     /**
      * @param {ProviderStateManager} providerStateManager - Manages provider settings and state
      */
     constructor(providerStateManager) {
-        this.#providerStateManager = providerStateManager;
-        this.#session = new Soup.Session();
+        this._providerStateManager = providerStateManager;
+        this._session = new Soup.Session();
     }
 
     /**
@@ -25,19 +25,19 @@ export default class ApiService {
      */
     async fetchQuota(provider, providerKey) {
         return new Promise((resolve, reject) => {
-            const providerSettings = this.#providerStateManager.getProviderSettings(providerKey);
+            const providerSettings = this._providerStateManager.getProviderSettings(providerKey);
             const apiKey = providerSettings.apiKey;
 
             const message = Soup.Message.new('GET', provider.url);
             message.request_headers.append('Authorization', `Bearer ${apiKey}`);
 
-            this.#session.send_and_read_async(message, GLib.PRIORITY_DEFAULT, null, (session, result) => {
-                this.#handleFetchResponse(session, result, message, provider, resolve, reject);
+            this._session.send_and_read_async(message, GLib.PRIORITY_DEFAULT, null, (session, result) => {
+                this._handleFetchResponse(session, result, message, provider, resolve, reject);
             });
         });
     }
 
-    #parseResponse(message, bytes) {
+    _parseResponse(message, bytes) {
         if (message.status_code !== 200) {
             throw new Error(`HTTP ${message.status_code}`);
         }
@@ -47,13 +47,13 @@ export default class ApiService {
         return JSON.parse(responseBody);
     }
 
-    #handleFetchResponse(session, result, message, provider, resolve, reject) {
+    _handleFetchResponse(session, result, message, provider, resolve, reject) {
         try {
             const bytes = session.send_and_read_finish(result);
-            const response = this.#parseResponse(message, bytes);
+            const response = this._parseResponse(message, bytes);
 
             // Parse provider-specific data
-            const parsedData = provider.parse(response, this.#providerStateManager._settingsHelper.getSettings());
+            const parsedData = provider.parse(response, this._providerStateManager._settingsHelper.getSettings());
             resolve(parsedData);
         } catch (error) {
             reject(error);
@@ -61,9 +61,9 @@ export default class ApiService {
     }
 
     destroy() {
-        if (this.#session) {
-            this.#session = null;
+        if (this._session) {
+            this._session = null;
         }
-        this.#providerStateManager = null;
+        this._providerStateManager = null;
     }
 }

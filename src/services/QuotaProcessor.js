@@ -17,25 +17,25 @@ export default class QuotaProcessor {
      * @returns {string} returns.renewsIn - Formatted renew time (e.g., "2h 30m", "Now", or empty string)
      */
     static process({ limit, used, renewsAt }) {
-        const timeUntilRenew = this.#calculateTimeUntilRenew(renewsAt);
+        const timeUntilRenew = this._calculateTimeUntilRenew(renewsAt);
         return {
             limit,
             used,
             renewsAt,
-            percentage: this.#calculatePercentage(used, limit),
+            percentage: this._calculatePercentage(used, limit),
             timeUntilRenew,
-            renewsIn: this.#formatRenewsIn(timeUntilRenew, used)
+            renewsIn: this._formatRenewsIn(timeUntilRenew, used)
         };
     }
 
-    static #calculatePercentage(used, limit) {
+    static _calculatePercentage(used, limit) {
         if (limit > 0) {
             return used / limit;
         }
         return 0;
     }
 
-    static #calculateTimeUntilRenew(renewsAt) {
+    static _calculateTimeUntilRenew(renewsAt) {
         if (!renewsAt) {
             return null;
         }
@@ -48,7 +48,7 @@ export default class QuotaProcessor {
         return renewsDate - new Date();
     }
 
-    static #formatRenewsIn(timeUntilRenew, used) {
+    static _formatRenewsIn(timeUntilRenew, used) {
         if (timeUntilRenew === null || used === 0) {
             return '';
         }
