@@ -37,14 +37,16 @@ const CircularProgress = GObject.registerClass(
                 let startAngle = -Math.PI / 2;
                 let endAngle = startAngle + 2 * Math.PI * this._percentage;
 
-                cr.setSourceRGBA(0.3, 0.3, 0.3, 0.5);
-                cr.setLineWidth(10);
+                // Background ring - thinner and airier
+                cr.setSourceRGBA(1, 1, 1, 0.1);
+                cr.setLineWidth(6);
                 cr.arc(centerX, centerY, radius, 0, 2 * Math.PI);
                 cr.stroke();
 
                 if (this._percentage > 0) {
-                    cr.setSourceRGBA(0.2, 0.8, 0.2, 1);
-                    cr.setLineWidth(10);
+                    // Progress ring - vibrant green
+                    cr.setSourceRGBA(0.18, 0.8, 0.44, 1);
+                    cr.setLineWidth(6);
                     cr.setLineCap(Cairo.LineCap.ROUND);
                     cr.arc(centerX, centerY, radius, startAngle, endAngle);
                     cr.stroke();
