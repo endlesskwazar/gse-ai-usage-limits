@@ -6,6 +6,7 @@ import * as PanelMenu from 'resource:///org/gnome/shell/ui/panelMenu.js';
 import * as PopupMenu from 'resource:///org/gnome/shell/ui/popupMenu.js';
 
 import CircularProgress from './widgets/CircularProgress.js';
+import StatusDetails from './widgets/StatusDetails.js';
 import ProviderDropdown from './widgets/ProviderDropdown.js';
 import RefreshButton from './widgets/RefreshButton.js';
 import ContextMenu from './widgets/ContextMenu.js';
@@ -210,22 +211,8 @@ export default class AIUsageExtension extends Extension {
         let progressWidget = new CircularProgress(0, Locale.gettext('Loading...'));
         this._contentArea.add_child(progressWidget);
 
-        let detailsBox = new St.BoxLayout({
-            vertical: true,
-            style: 'padding-top: 6px; spacing: 4px;',
-            x_align: Clutter.ActorAlign.CENTER
-        });
-
-        // Reserve space for text (2 lines)
-        detailsBox.add_child(new St.Label({ text: ' ' }));
-        detailsBox.add_child(
-            new St.Label({
-                text: ' ',
-                style: 'font-size: 0.85em; opacity: 0.7;'
-            })
-        );
-
-        this._contentArea.add_child(detailsBox);
+        let statusDetails = new StatusDetails();
+        this._contentArea.add_child(statusDetails);
 
         // Perform async request using ApiService
         try {
@@ -260,30 +247,9 @@ export default class AIUsageExtension extends Extension {
             this._contentArea.add_child(progressWidget);
 
             // Display Details
-            let detailsBox = new St.BoxLayout({
-                vertical: true,
-                style: 'padding-top: 6px; spacing: 4px;',
-                x_align: Clutter.ActorAlign.CENTER
-            });
-
-            detailsBox.add_child(
-                new St.Label({
-                    text: `${Locale.gettext('Used')}: ${requests} / ${limit}`,
-                    x_align: Clutter.ActorAlign.CENTER
-                })
-            );
-
-            if (renewsStr) {
-                detailsBox.add_child(
-                    new St.Label({
-                        text: `${Locale.gettext('Renews in')}: ${renewsStr}`,
-                        style: 'font-size: 0.85em; opacity: 0.7;',
-                        x_align: Clutter.ActorAlign.CENTER
-                    })
-                );
-            }
-
-            this._contentArea.add_child(detailsBox);
+            let statusDetails = new StatusDetails();
+            statusDetails.update(requests, limit, renewsStr);
+            this._contentArea.add_child(statusDetails);
         } catch (e) {
             // Determine if this._contentArea is still valid to write to
             if (this._contentArea && this._contentArea.get_parent()) {
