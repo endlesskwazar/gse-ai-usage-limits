@@ -13,6 +13,7 @@ import ContextMenu from './widgets/ContextMenu.js';
 import NoProvidersMsgBox from './widgets/NoProvidersMsgBox.js';
 import ApiService from './services/ApiService.js';
 import ProviderStateManager from './services/ProviderStateManager.js';
+import QuotaProcessor from './services/QuotaProcessor.js';
 import * as Locale from './locale.js';
 
 export default class AIUsageExtension extends Extension {
@@ -24,6 +25,9 @@ export default class AIUsageExtension extends Extension {
 
         // Initialize API service
         this._apiService = new ApiService(this._providerStateManager);
+
+        // Initialize QuotaProcessor
+        this._quotaProcessor = new QuotaProcessor();
 
         // Create the Panel Menu Button
         this._indicator = new PanelMenu.Button(0.0, this.metadata.name, false);
@@ -183,80 +187,73 @@ export default class AIUsageExtension extends Extension {
         }
     }
 
+    _showLoadingUI() {
+        let progressWidget = new CircularProgress(0, Locale.gettext('Loading...'));
+        this._contentArea.add_child(progressWidget);
+
+        let statusDetails = new StatusDetails();
+        this._contentArea.add_child(statusDetails);
+    }
+
+    _showQuotaUI(used, limit, renewsStr, percentage) {
+        let progressWidget = new CircularProgress(percentage);
+        this._contentArea.add_child(progressWidget);
+
+        let statusDetails = new StatusDetails();
+        statusDetails.update(used, limit, renewsStr);
+        this._contentArea.add_child(statusDetails);
+    }
+
     async _loadQuota(providerKey) {
         const provider = this._providerStateManager.getProvider(providerKey);
         if (!provider) return;
 
         const providerSettings = this._providerStateManager.getProviderSettings(providerKey);
 
-        // Clear Content immediately
         if (this._contentArea) {
             this._contentArea.destroy_all_children();
         }
 
         if (!providerSettings.apiKey) {
-            // This case should theoretically be handled by provider state filtering,
-            // but keep it as a fallback for safety.
             let errorLabel = new St.Label({
                 text: Locale.gettext('API Key missing.\nPlease set it in Extension Settings.'),
                 style_class: 'error-label',
-                style: 'text-align: center; padding: 20px;',
+                style: 'text-align: center; padding: 20px 20px 20px 20px',
                 x_align: Clutter.ActorAlign.CENTER
             });
             this._contentArea.add_child(errorLabel);
             return;
         }
 
-        // Skeleton / Loading State
-        let progressWidget = new CircularProgress(0, Locale.gettext('Loading...'));
-        this._contentArea.add_child(progressWidget);
-
-        let statusDetails = new StatusDetails();
-        this._contentArea.add_child(statusDetails);
-
-        // Perform async request using ApiService
+        this._showLoadingUI();
         try {
             const parsedData = await this._apiService.fetchQuota(provider, providerKey);
 
-            // Check if extension is still active
-            if (!this._indicator) return;
+            if (!this._contentArea) return;
 
-            // Clear "Loading..."
             this._contentArea.destroy_all_children();
 
-            const limit = parsedData.limit;
-            const requests = parsedData.used;
-            const renewsAt = parsedData.renewsAt;
+            const processedData = this._quotaProcessor.process({
+                limit: parsedData.limit,
+                used: parsedData.used,
+                renewsAt: parsedData.renewsAt
+            });
 
             let renewsStr = '';
-            if (renewsAt && requests > 0) {
-                const renewsDate = new Date(renewsAt);
-                const diffMs = renewsDate - new Date();
-                const diffHrs = Math.floor(diffMs / (1000 * 60 * 60));
-                const diffMins = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
-                renewsStr = diffMs > 0 ? `${diffHrs}h ${diffMins}m` : 'Now';
+            const timeUntilRenew = processedData.timeUntilRenew;
+            if (timeUntilRenew !== null && processedData.used > 0) {
+                const diffHrs = Math.floor(timeUntilRenew / (1000 * 60 * 60));
+                const diffMins = Math.floor((timeUntilRenew % (1000 * 60 * 60)) / (1000 * 60));
+                renewsStr = timeUntilRenew > 0 ? `${diffHrs}h ${diffMins}m` : 'Now';
             }
 
-            let percentage = 0;
-            if (limit > 0) {
-                percentage = requests / limit;
-            }
-
-            // Display Progress
-            let progressWidget = new CircularProgress(percentage);
-            this._contentArea.add_child(progressWidget);
-
-            // Display Details
-            let statusDetails = new StatusDetails();
-            statusDetails.update(requests, limit, renewsStr);
-            this._contentArea.add_child(statusDetails);
+            this._showQuotaUI(processedData.used, processedData.limit, renewsStr, processedData.percentage);
         } catch (e) {
-            // Determine if this._contentArea is still valid to write to
             if (this._contentArea && this._contentArea.get_parent()) {
                 this._contentArea.destroy_all_children();
                 let errLabel = new St.Label({
                     text: `${Locale.gettext('Error')}: ${e.message}`,
-                    style: 'color: red; padding: 10px;',
+                    style: 'color: red; padding: 10px 10px 10px 10px',
                     x_align: Clutter.ActorAlign.CENTER
                 });
                 this._contentArea.add_child(errLabel);
@@ -317,6 +314,9 @@ export default class AIUsageExtension extends Extension {
         if (this._providerStateManager) {
             this._providerStateManager.destroy();
             this._providerStateManager = null;
+        }
+        if (this._quotaProcessor) {
+            this._quotaProcessor = null;
         }
         this._headerBar = null;
         this._providerDropdown = null;
