@@ -2,15 +2,13 @@ import Clutter from 'gi://Clutter';
 import St from 'gi://St';
 import { Extension } from 'resource:///org/gnome/shell/extensions/extension.js';
 import * as Main from 'resource:///org/gnome/shell/ui/main.js';
-import * as PanelMenu from 'resource:///org/gnome/shell/ui/panelMenu.js';
-import * as PopupMenu from 'resource:///org/gnome/shell/ui/popupMenu.js';
 
+import PanelIndicator from './widgets/PanelIndicator.js';
 import CircularProgress from './widgets/CircularProgress.js';
 import StatusDetails from './widgets/StatusDetails.js';
 import ProviderDropdown from './widgets/ProviderDropdown.js';
 import RefreshButton from './widgets/RefreshButton.js';
 import SettingsButton from './widgets/SettingsButton.js';
-import ContextMenu from './widgets/ContextMenu.js';
 import NoProvidersMsgBox from './widgets/NoProvidersMsgBox.js';
 import ApiService from './services/ApiService.js';
 import ProviderStateManager from './services/ProviderStateManager.js';
@@ -27,69 +25,13 @@ export default class AIUsageExtension extends Extension {
         // Initialize API service
         this._apiService = new ApiService(this._providerStateManager);
 
-        // Create the Panel Menu Button
-        this._indicator = new PanelMenu.Button(0.0, this.metadata.name, false);
-        this._indicator.add_style_class_name('ai-usage-indicator');
-        this._currentButton = this._indicator;
-        this._indicator.menu.destroy();
+        // Create the Panel Indicator
+        this._panelIndicator = new PanelIndicator(() => this.openPreferences());
+        this._indicator = this._panelIndicator.getIndicator();
 
-        this._indicator.menu = new PopupMenu.PopupMenu(this._indicator, 0.5, St.Side.TOP);
-        Main.layoutManager.uiGroup.add_child(this._indicator.menu.actor);
-        this._indicator.menu.actor.add_style_class_name('popup-menu');
-        this._indicator.menu.actor.hide();
-
-        Main.panel.menuManager.addMenu(this._indicator.menu);
-
-        // Icon/Text on the panel
-        let panelBox = new St.BoxLayout();
-
-        let icon = new St.Icon({
-            icon_name: 'thunderbolt-symbolic',
-            style_class: 'system-status-icon'
-        });
-        panelBox.add_child(icon);
-        this._indicator.add_child(panelBox);
-
-        // Track hover state
-        this._isHovered = false;
-        this._isMenuOpen = false;
-
-        this._indicator.connect('enter-event', () => {
-            this._isHovered = true;
-            this._updateHoverState();
-        });
-
-        this._indicator.connect('leave-event', () => {
-            this._isHovered = false;
-            this._updateHoverState();
-        });
-
-        // --- Context Menu (Right Click) ---
-        this._contextMenu = new ContextMenu(this._indicator, () => this.openPreferences());
-        this._contextMenu.connect('close-extension', () => {
+        // Connect to panel indicator signals
+        this._panelIndicator.connect('close-extension', () => {
             Main.extensionManager.disableExtension(this.uuid);
-        });
-
-        // Track context menu open state
-        this._contextMenu._menu.connect('open-state-changed', (menu, open) => {
-            this._isMenuOpen = open;
-            this._updateHoverState();
-        });
-
-        // Handle Clicks
-        this._indicator.connect('button-press-event', (actor, event) => {
-            const button = event.get_button();
-            if (button === Clutter.BUTTON_SECONDARY) {
-                // Right click: Toggle Context Menu
-                this._contextMenu.toggle();
-                this._indicator.menu.close(); // Ensure main menu is closed
-                return Clutter.EVENT_STOP;
-            } else if (button === Clutter.BUTTON_PRIMARY) {
-                // Left click: Close context menu
-                this._contextMenu.close();
-                return Clutter.EVENT_PROPAGATE;
-            }
-            return Clutter.EVENT_PROPAGATE;
         });
 
         // --- Interface ---
@@ -162,11 +104,8 @@ export default class AIUsageExtension extends Extension {
             this._showNoProvidersMessage();
         });
 
-        // Listen for menu open to refresh limits and track menu state for hover
-        this._menuOpenSignalId = this._indicator.menu.connect('open-state-changed', (menu, open) => {
-            this._isMenuOpen = open || (this._contextMenu && this._contextMenu._menu.isOpen);
-            this._updateHoverState();
-
+        // Listen for menu open to refresh limits
+        this._menuOpenSignalId = this._panelIndicator.connect('menu-open-state-changed', (indicator, open) => {
             if (open) {
                 const currentProvider = this._providerStateManager.getCurrentProvider();
                 if (currentProvider && this._providerStateManager.isProviderActive(currentProvider)) {
@@ -261,26 +200,6 @@ export default class AIUsageExtension extends Extension {
         }
     }
 
-    _updateHoverState() {
-        if (this._isHovered || this._isMenuOpen) {
-            this._add_style_pseudo_class('hover');
-        } else {
-            this._remove_style_pseudo_class('hover');
-        }
-    }
-
-    _add_style_pseudo_class(pseudo_class) {
-        if (this._currentButton && this._currentButton.add_style_pseudo_class) {
-            this._currentButton.add_style_pseudo_class(pseudo_class);
-        }
-    }
-
-    _remove_style_pseudo_class(pseudo_class) {
-        if (this._currentButton && this._currentButton.remove_style_pseudo_class) {
-            this._currentButton.remove_style_pseudo_class(pseudo_class);
-        }
-    }
-
     disable() {
         if (this._providerStateManager && this._providerChangedSignalId) {
             this._providerStateManager.disconnect(this._providerChangedSignalId);
@@ -297,13 +216,9 @@ export default class AIUsageExtension extends Extension {
             this._menuOpenSignalId = null;
         }
 
-        if (this._contextMenu) {
-            this._contextMenu.destroy();
-            this._contextMenu = null;
-        }
-        if (this._indicator) {
-            this._indicator.menu.destroy();
-            this._indicator.destroy();
+        if (this._panelIndicator) {
+            this._panelIndicator.destroy();
+            this._panelIndicator = null;
             this._indicator = null;
         }
         if (this._apiService) {
