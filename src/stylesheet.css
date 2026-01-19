@@ -118,3 +118,14 @@
     color: #ffffff;
     text-decoration: underline;
 }
+
+.ai-usage-indicator {
+    padding: 4px;
+}
+
+.ai-usage-indicator:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+}
+.ai-usage-indicator:hover .system-status-icon {
+    color: #6bd2ff;
+}

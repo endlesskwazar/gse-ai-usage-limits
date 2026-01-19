@@ -26,6 +26,8 @@ export default class AIUsageExtension extends Extension {
 
         // Create the Panel Menu Button
         this._indicator = new PanelMenu.Button(0.0, this.metadata.name, false);
+        this._indicator.add_style_class_name('ai-usage-indicator');
+        this._currentButton = this._indicator;
         this._indicator.menu.destroy();
 
         this._indicator.menu = new PopupMenu.PopupMenu(this._indicator, 0.5, St.Side.TOP);
@@ -45,10 +47,30 @@ export default class AIUsageExtension extends Extension {
         panelBox.add_child(icon);
         this._indicator.add_child(panelBox);
 
+        // Track hover state
+        this._isHovered = false;
+        this._isMenuOpen = false;
+
+        this._indicator.connect('enter-event', () => {
+            this._isHovered = true;
+            this._updateHoverState();
+        });
+
+        this._indicator.connect('leave-event', () => {
+            this._isHovered = false;
+            this._updateHoverState();
+        });
+
         // --- Context Menu (Right Click) ---
         this._contextMenu = new ContextMenu(this._indicator, () => this.openPreferences());
         this._contextMenu.connect('close-extension', () => {
             Main.extensionManager.disableExtension(this.uuid);
+        });
+
+        // Track context menu open state
+        this._contextMenu._menu.connect('open-state-changed', (menu, open) => {
+            this._isMenuOpen = open;
+            this._updateHoverState();
         });
 
         // Handle Clicks
@@ -130,8 +152,11 @@ export default class AIUsageExtension extends Extension {
             this._showNoProvidersMessage();
         });
 
-        // Listen for menu open to refresh limits
+        // Listen for menu open to refresh limits and track menu state for hover
         this._menuOpenSignalId = this._indicator.menu.connect('open-state-changed', (menu, open) => {
+            this._isMenuOpen = open || (this._contextMenu && this._contextMenu._menu.isOpen);
+            this._updateHoverState();
+
             if (open) {
                 const currentProvider = this._providerStateManager.getCurrentProvider();
                 if (currentProvider && this._providerStateManager.isProviderActive(currentProvider)) {
@@ -271,6 +296,26 @@ export default class AIUsageExtension extends Extension {
                 this._contentArea.add_child(errLabel);
             }
             console.error(e);
+        }
+    }
+
+    _updateHoverState() {
+        if (this._isHovered || this._isMenuOpen) {
+            this._add_style_pseudo_class('hover');
+        } else {
+            this._remove_style_pseudo_class('hover');
+        }
+    }
+
+    _add_style_pseudo_class(pseudo_class) {
+        if (this._currentButton && this._currentButton.add_style_pseudo_class) {
+            this._currentButton.add_style_pseudo_class(pseudo_class);
+        }
+    }
+
+    _remove_style_pseudo_class(pseudo_class) {
+        if (this._currentButton && this._currentButton.remove_style_pseudo_class) {
+            this._currentButton.remove_style_pseudo_class(pseudo_class);
         }
     }
 
