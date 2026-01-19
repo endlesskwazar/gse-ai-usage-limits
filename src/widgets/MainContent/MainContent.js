@@ -1,8 +1,8 @@
 import Clutter from 'gi://Clutter';
 import GObject from 'gi://GObject';
 import St from 'gi://St';
-import * as Locale from '../../locale.js';
 
+import * as Locale from '../../locale.js';
 import CircularProgress from './CircularProgress.js';
 import StatusDetails from './StatusDetails.js';
 import NoProvidersMsgBox from './NoProvidersMsgBox.js';
@@ -18,7 +18,7 @@ const MainContent = GObject.registerClass(
             super._init({
                 vertical: true,
                 x_align: Clutter.ActorAlign.CENTER,
-                style: 'padding-bottom: 12px;'
+                style_class: 'ai-usage-main-content'
             });
 
             this._currentState = null;
@@ -72,10 +72,9 @@ const MainContent = GObject.registerClass(
 
             let errorLabel = new St.Label({
                 text: message,
-                style_class: isApiKeyError ? 'error-label' : '',
-                style: isApiKeyError
-                    ? 'text-align: center; padding: 20px 20px 20px 20px'
-                    : 'color: red; padding: 10px 10px 10px 10px',
+                style_class: isApiKeyError
+                    ? 'ai-usage-error-label ai-usage-error-label-api-key'
+                    : 'ai-usage-error-label',
                 x_align: Clutter.ActorAlign.CENTER
             });
             this.add_child(errorLabel);

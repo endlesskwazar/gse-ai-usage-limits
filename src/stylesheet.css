@@ -186,3 +186,19 @@
 .ai-usage-indicator:hover .system-status-icon {
     color: #6bd2ff;
 }
+
+/* Main Content */
+.ai-usage-main-content {
+    padding-bottom: 12px;
+}
+
+/* Error Labels */
+.ai-usage-error-label {
+    color: red;
+    padding: 10px;
+}
+
+.ai-usage-error-label-api-key {
+    text-align: center;
+    padding: 20px;
+}
