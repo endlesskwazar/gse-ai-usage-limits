@@ -7,8 +7,6 @@ const CircularProgress = GObject.registerClass(
     class CircularProgress extends St.Widget {
         _init(percentage, labelText) {
             super._init({
-                width: 110,
-                height: 110,
                 x_expand: false,
                 y_expand: false,
                 x_align: Clutter.ActorAlign.CENTER,
@@ -16,12 +14,13 @@ const CircularProgress = GObject.registerClass(
                 layout_manager: new Clutter.BinLayout()
             });
 
+            this.add_style_class_name('ai-usage-circular-progress-container');
+
             this._percentage = Math.min(Math.max(percentage, 0), 1);
             this._labelText = labelText;
 
             this._drawingArea = new St.DrawingArea({
-                width: 110,
-                height: 110,
+                style_class: 'ai-usage-circular-progress-canvas',
                 x_expand: false,
                 y_expand: false,
                 x_align: Clutter.ActorAlign.CENTER,
@@ -57,14 +56,10 @@ const CircularProgress = GObject.registerClass(
 
             let label = new St.Label({
                 text: this._labelText || `${Math.round(this._percentage * 100)}%`,
-                style_class: 'ai-usage-progress-label',
+                style_class: this._labelText ? 'ai-usage-progress-label-small' : 'ai-usage-progress-label',
                 x_align: Clutter.ActorAlign.CENTER,
                 y_align: Clutter.ActorAlign.CENTER
             });
-
-            if (this._labelText) {
-                label.style = 'font-size: 12px;';
-            }
 
             this.add_child(label);
         }
