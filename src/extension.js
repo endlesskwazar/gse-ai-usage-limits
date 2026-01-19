@@ -6,9 +6,7 @@ import * as Main from 'resource:///org/gnome/shell/ui/main.js';
 import PanelIndicator from './widgets/PanelIndicator.js';
 import CircularProgress from './widgets/CircularProgress.js';
 import StatusDetails from './widgets/StatusDetails.js';
-import ProviderDropdown from './widgets/ProviderDropdown.js';
-import RefreshButton from './widgets/RefreshButton.js';
-import SettingsButton from './widgets/SettingsButton.js';
+import HeaderBar from './widgets/HeaderBar/HeaderBar.js';
 import NoProvidersMsgBox from './widgets/NoProvidersMsgBox.js';
 import ApiService from './services/ApiService.js';
 import ProviderStateManager from './services/ProviderStateManager.js';
@@ -43,34 +41,28 @@ export default class AIUsageExtension extends Extension {
         });
 
         // Header Bar (Settings + Provider Chooser + Refresh)
-        this._headerBar = new St.BoxLayout({
-            vertical: false,
-            style_class: 'ai-usage-header-box',
-            x_expand: true
+        this._headerBar = new HeaderBar({
+            providerStateManager: this._providerStateManager,
+            openPreferences: () => this.openPreferences(),
+            onRefresh: () => {
+                const currentProvider = this._providerStateManager.getCurrentProvider();
+                if (currentProvider) {
+                    this._loadQuota(currentProvider).catch(err => console.error('Failed to load quota:', err));
+                }
+            }
         });
 
-        // Left side: Settings Button
-        this._settingsButton = new SettingsButton();
-        this._settingsButton.connect('settings-clicked', () => {
-            this.openPreferences();
-        });
-        this._headerBar.add_child(this._settingsButton);
-
-        // Center: Provider Dropdown Widget
-        this._providerDropdown = new ProviderDropdown({
-            providerStateManager: this._providerStateManager
-        });
-        this._headerBar.add_child(this._providerDropdown);
-
-        // Right side: Refresh Button
-        this._refreshButton = new RefreshButton();
-        this._refreshButton.connect('refresh-clicked', () => {
+        // Connect to HeaderBar signals
+        this._headerBar.connect('refresh-clicked', () => {
             const currentProvider = this._providerStateManager.getCurrentProvider();
             if (currentProvider) {
                 this._loadQuota(currentProvider).catch(err => console.error('Failed to load quota:', err));
             }
         });
-        this._headerBar.add_child(this._refreshButton);
+
+        this._headerBar.connect('settings-clicked', () => {
+            this.openPreferences();
+        });
 
         // Content Area
         this._contentArea = new St.BoxLayout({
@@ -87,21 +79,13 @@ export default class AIUsageExtension extends Extension {
 
         Main.panel.addToStatusArea(this.uuid, this._indicator);
 
-        // Listen for provider changes from ProviderStateManager
-        this._providerChangedSignalId = this._providerStateManager.connect('provider-changed', (psm, providerKey) => {
+        // Connect HeaderBar provider-changed signal to load quota
+        this._headerBar.connect('provider-changed', (_headerBar, providerKey) => {
             if (providerKey) {
-                this._refreshButton.setEnabled(true);
                 this._loadQuota(providerKey).catch(err => console.error('Failed to load quota:', err));
             } else {
-                this._refreshButton.setEnabled(false);
                 this._showNoProvidersMessage();
             }
-        });
-
-        // Listen for current provider becoming invalid
-        this._currentProviderInvalidSignalId = this._providerStateManager.connect('current-provider-invalid', () => {
-            this._refreshButton.setEnabled(false);
-            this._showNoProvidersMessage();
         });
 
         // Listen for menu open to refresh limits
@@ -109,10 +93,8 @@ export default class AIUsageExtension extends Extension {
             if (open) {
                 const currentProvider = this._providerStateManager.getCurrentProvider();
                 if (currentProvider && this._providerStateManager.isProviderActive(currentProvider)) {
-                    this._refreshButton.setEnabled(true);
                     this._loadQuota(currentProvider).catch(err => console.error('Failed to load quota:', err));
                 } else {
-                    this._refreshButton.setEnabled(false);
                     this._showNoProvidersMessage();
                 }
             }
@@ -201,19 +183,14 @@ export default class AIUsageExtension extends Extension {
     }
 
     disable() {
-        if (this._providerStateManager && this._providerChangedSignalId) {
-            this._providerStateManager.disconnect(this._providerChangedSignalId);
-            this._providerChangedSignalId = null;
-        }
-
-        if (this._providerStateManager && this._currentProviderInvalidSignalId) {
-            this._providerStateManager.disconnect(this._currentProviderInvalidSignalId);
-            this._currentProviderInvalidSignalId = null;
-        }
-
         if (this._indicator && this._indicator.menu && this._menuOpenSignalId) {
             this._indicator.menu.disconnect(this._menuOpenSignalId);
             this._menuOpenSignalId = null;
+        }
+
+        if (this._headerBar) {
+            this._headerBar.destroy();
+            this._headerBar = null;
         }
 
         if (this._panelIndicator) {
@@ -229,8 +206,6 @@ export default class AIUsageExtension extends Extension {
             this._providerStateManager.destroy();
             this._providerStateManager = null;
         }
-        this._headerBar = null;
-        this._providerDropdown = null;
         this._contentArea = null;
     }
 }
