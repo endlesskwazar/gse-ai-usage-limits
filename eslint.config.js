@@ -2,6 +2,7 @@ import globals from 'globals';
 import js from '@eslint/js';
 import prettierConfig from 'eslint-config-prettier';
 import prettierPlugin from 'eslint-plugin-prettier';
+import jsdocPlugin from 'eslint-plugin-jsdoc';
 
 export default [
     js.configs.recommended,
@@ -37,12 +38,15 @@ export default [
             }
         },
         plugins: {
-            prettier: prettierPlugin
+            prettier: prettierPlugin,
+            jsdoc: jsdocPlugin
         },
         rules: {
             'prettier/prettier': 'error',
-            'no-unused-vars': ['warn', { argsIgnorePattern: '^_' }],
-            semi: 'error'
+            'no-unused-vars': ['warn', { argsIgnorePattern: '^_', varsIgnorePattern: '^_' }],
+            semi: 'error',
+            'jsdoc/valid-types': 'warn',
+            'jsdoc/no-undefined-types': 'warn'
         }
     },
     prettierConfig

@@ -1,14 +1,18 @@
 import GLib from 'gi://GLib';
 import Soup from 'gi://Soup';
 
-/**
- * ApiService handles HTTP requests to provider APIs.
- * Encapsulates Soup Session management and request/response handling.
- */
+import ProviderStateManager from './ProviderStateManager.js';
+
 export default class ApiService {
+    #providerStateManager;
+    #session;
+
+    /**
+     * @param {ProviderStateManager} providerStateManager - Manages provider settings and state
+     */
     constructor(providerStateManager) {
-        this._providerStateManager = providerStateManager;
-        this._session = new Soup.Session();
+        this.#providerStateManager = providerStateManager;
+        this.#session = new Soup.Session();
     }
 
     /**
@@ -21,38 +25,19 @@ export default class ApiService {
      */
     async fetchQuota(provider, providerKey) {
         return new Promise((resolve, reject) => {
-            const providerSettings = this._providerStateManager.getProviderSettings(providerKey);
+            const providerSettings = this.#providerStateManager.getProviderSettings(providerKey);
             const apiKey = providerSettings.apiKey;
 
             const message = Soup.Message.new('GET', provider.url);
             message.request_headers.append('Authorization', `Bearer ${apiKey}`);
 
-            this._session.send_and_read_async(message, GLib.PRIORITY_DEFAULT, null, (session, result) => {
-                try {
-                    const bytes = session.send_and_read_finish(result);
-                    const response = this._parseResponse(message, bytes);
-
-                    // Parse provider-specific data
-                    const parsedData = provider.parse(
-                        response,
-                        this._providerStateManager._settingsHelper.getSettings()
-                    );
-                    resolve(parsedData);
-                } catch (error) {
-                    reject(error);
-                }
+            this.#session.send_and_read_async(message, GLib.PRIORITY_DEFAULT, null, (session, result) => {
+                this.#handleFetchResponse(session, result, message, provider, resolve, reject);
             });
         });
     }
 
-    /**
-     * Parse HTTP response and handle status codes.
-     * @param {Soup.Message} message - The Soup message object
-     * @param {GLib.Bytes} bytes - Raw response bytes
-     * @returns {Object} Parsed JSON response
-     * @throws {Error} If status code is not 200 or parsing fails
-     */
-    _parseResponse(message, bytes) {
+    #parseResponse(message, bytes) {
         if (message.status_code !== 200) {
             throw new Error(`HTTP ${message.status_code}`);
         }
@@ -62,13 +47,23 @@ export default class ApiService {
         return JSON.parse(responseBody);
     }
 
-    /**
-     * Clean up resources when the service is no longer needed.
-     */
-    destroy() {
-        if (this._session) {
-            this._session = null;
+    #handleFetchResponse(session, result, message, provider, resolve, reject) {
+        try {
+            const bytes = session.send_and_read_finish(result);
+            const response = this.#parseResponse(message, bytes);
+
+            // Parse provider-specific data
+            const parsedData = provider.parse(response, this.#providerStateManager._settingsHelper.getSettings());
+            resolve(parsedData);
+        } catch (error) {
+            reject(error);
         }
-        this._providerStateManager = null;
+    }
+
+    destroy() {
+        if (this.#session) {
+            this.#session = null;
+        }
+        this.#providerStateManager = null;
     }
 }
