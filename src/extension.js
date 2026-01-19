@@ -1,13 +1,10 @@
-import Clutter from 'gi://Clutter';
 import St from 'gi://St';
 import { Extension } from 'resource:///org/gnome/shell/extensions/extension.js';
 import * as Main from 'resource:///org/gnome/shell/ui/main.js';
 
 import PanelIndicator from './widgets/PanelIndicator.js';
-import CircularProgress from './widgets/CircularProgress.js';
-import StatusDetails from './widgets/StatusDetails.js';
 import HeaderBar from './widgets/HeaderBar/HeaderBar.js';
-import NoProvidersMsgBox from './widgets/NoProvidersMsgBox.js';
+import MainContent from './widgets/MainContent/MainContent.js';
 import ApiService from './services/ApiService.js';
 import ProviderStateManager from './services/ProviderStateManager.js';
 import QuotaProcessor from './services/QuotaProcessor.js';
@@ -65,14 +62,13 @@ export default class AIUsageExtension extends Extension {
         });
 
         // Content Area
-        this._contentArea = new St.BoxLayout({
-            vertical: true,
-            x_align: Clutter.ActorAlign.CENTER,
-            style: 'padding-bottom: 12px;'
+        this._mainContent = new MainContent();
+        this._mainContent.connect('settings-clicked', () => {
+            this.openPreferences();
         });
 
         this._mainLayout.add_child(this._headerBar);
-        this._mainLayout.add_child(this._contentArea);
+        this._mainLayout.add_child(this._mainContent);
 
         // Add the custom layout to the menu
         this._indicator.menu.box.add_child(this._mainLayout);
@@ -84,7 +80,7 @@ export default class AIUsageExtension extends Extension {
             if (providerKey) {
                 this._loadQuota(providerKey).catch(err => console.error('Failed to load quota:', err));
             } else {
-                this._showNoProvidersMessage();
+                this._mainContent.showNoProviders();
             }
         });
 
@@ -95,7 +91,7 @@ export default class AIUsageExtension extends Extension {
                 if (currentProvider && this._providerStateManager.isProviderActive(currentProvider)) {
                     this._loadQuota(currentProvider).catch(err => console.error('Failed to load quota:', err));
                 } else {
-                    this._showNoProvidersMessage();
+                    this._mainContent.showNoProviders();
                 }
             }
         });
@@ -104,60 +100,26 @@ export default class AIUsageExtension extends Extension {
         this._providerStateManager.setCurrentProvider(null);
     }
 
-    _showNoProvidersMessage() {
-        if (this._contentArea) {
-            this._contentArea.destroy_all_children();
-            const msgBox = new NoProvidersMsgBox();
-            msgBox.connect('settings-clicked', () => this.openPreferences());
-            this._contentArea.add_child(msgBox);
-        }
-    }
-
-    _showLoadingUI() {
-        let progressWidget = new CircularProgress(0, Locale.gettext('Loading...'));
-        this._contentArea.add_child(progressWidget);
-
-        let statusDetails = new StatusDetails();
-        this._contentArea.add_child(statusDetails);
-    }
-
-    _showQuotaUI(used, limit, renewsStr, percentage) {
-        let progressWidget = new CircularProgress(percentage);
-        this._contentArea.add_child(progressWidget);
-
-        let statusDetails = new StatusDetails();
-        statusDetails.update(used, limit, renewsStr);
-        this._contentArea.add_child(statusDetails);
-    }
-
     async _loadQuota(providerKey) {
         const provider = this._providerStateManager.getProvider(providerKey);
         if (!provider) return;
 
         const providerSettings = this._providerStateManager.getProviderSettings(providerKey);
 
-        if (this._contentArea) {
-            this._contentArea.destroy_all_children();
-        }
+        this._mainContent.clear();
 
         if (!providerSettings.apiKey) {
-            let errorLabel = new St.Label({
-                text: Locale.gettext('API Key missing.\nPlease set it in Extension Settings.'),
-                style_class: 'error-label',
-                style: 'text-align: center; padding: 20px 20px 20px 20px',
-                x_align: Clutter.ActorAlign.CENTER
-            });
-            this._contentArea.add_child(errorLabel);
+            this._mainContent.showError(Locale.gettext('API Key missing.\nPlease set it in Extension Settings.'), true);
             return;
         }
 
-        this._showLoadingUI();
+        this._mainContent.showLoading();
         try {
             const parsedData = await this._apiService.fetchQuota(provider, providerKey);
 
-            if (!this._contentArea) return;
+            if (!this._mainContent) return;
 
-            this._contentArea.destroy_all_children();
+            this._mainContent.clear();
 
             const processedData = QuotaProcessor.process({
                 limit: parsedData.limit,
@@ -165,18 +127,15 @@ export default class AIUsageExtension extends Extension {
                 renewsAt: parsedData.renewsAt
             });
 
-            let renewsStr = processedData.renewsIn;
-
-            this._showQuotaUI(processedData.used, processedData.limit, renewsStr, processedData.percentage);
+            this._mainContent.showQuota(
+                processedData.used,
+                processedData.limit,
+                processedData.renewsIn,
+                processedData.percentage
+            );
         } catch (e) {
-            if (this._contentArea && this._contentArea.get_parent()) {
-                this._contentArea.destroy_all_children();
-                let errLabel = new St.Label({
-                    text: `${Locale.gettext('Error')}: ${e.message}`,
-                    style: 'color: red; padding: 10px 10px 10px 10px',
-                    x_align: Clutter.ActorAlign.CENTER
-                });
-                this._contentArea.add_child(errLabel);
+            if (this._mainContent && this._mainContent.get_parent()) {
+                this._mainContent.showError(`${Locale.gettext('Error')}: ${e.message}`);
             }
             console.error(e);
         }
@@ -186,6 +145,11 @@ export default class AIUsageExtension extends Extension {
         if (this._indicator && this._indicator.menu && this._menuOpenSignalId) {
             this._indicator.menu.disconnect(this._menuOpenSignalId);
             this._menuOpenSignalId = null;
+        }
+
+        if (this._mainContent) {
+            this._mainContent.destroy();
+            this._mainContent = null;
         }
 
         if (this._headerBar) {
@@ -206,6 +170,6 @@ export default class AIUsageExtension extends Extension {
             this._providerStateManager.destroy();
             this._providerStateManager = null;
         }
-        this._contentArea = null;
+        this._mainContent = null;
     }
 }

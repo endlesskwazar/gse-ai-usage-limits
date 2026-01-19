@@ -1,7 +1,7 @@
 import Clutter from 'gi://Clutter';
 import GObject from 'gi://GObject';
 import St from 'gi://St';
-import * as Locale from '../locale.js';
+import * as Locale from '../../locale.js';
 
 const StatusDetails = GObject.registerClass(
     class StatusDetails extends St.BoxLayout {
