@@ -9,6 +9,7 @@ import CircularProgress from './widgets/CircularProgress.js';
 import StatusDetails from './widgets/StatusDetails.js';
 import ProviderDropdown from './widgets/ProviderDropdown.js';
 import RefreshButton from './widgets/RefreshButton.js';
+import SettingsButton from './widgets/SettingsButton.js';
 import ContextMenu from './widgets/ContextMenu.js';
 import NoProvidersMsgBox from './widgets/NoProvidersMsgBox.js';
 import ApiService from './services/ApiService.js';
@@ -99,14 +100,27 @@ export default class AIUsageExtension extends Extension {
             style_class: 'ai-usage-main-container'
         });
 
-        // Header Bar (Refresh + Provider Chooser)
+        // Header Bar (Settings + Provider Chooser + Refresh)
         this._headerBar = new St.BoxLayout({
             vertical: false,
             style_class: 'ai-usage-header-box',
             x_expand: true
         });
 
-        // 1. Refresh Button
+        // Left side: Settings Button
+        this._settingsButton = new SettingsButton();
+        this._settingsButton.connect('settings-clicked', () => {
+            this.openPreferences();
+        });
+        this._headerBar.add_child(this._settingsButton);
+
+        // Center: Provider Dropdown Widget
+        this._providerDropdown = new ProviderDropdown({
+            providerStateManager: this._providerStateManager
+        });
+        this._headerBar.add_child(this._providerDropdown);
+
+        // Right side: Refresh Button
         this._refreshButton = new RefreshButton();
         this._refreshButton.connect('refresh-clicked', () => {
             const currentProvider = this._providerStateManager.getCurrentProvider();
@@ -115,12 +129,6 @@ export default class AIUsageExtension extends Extension {
             }
         });
         this._headerBar.add_child(this._refreshButton);
-
-        // 2. Provider Dropdown Widget
-        this._providerDropdown = new ProviderDropdown({
-            providerStateManager: this._providerStateManager
-        });
-        this._headerBar.add_child(this._providerDropdown);
 
         // Content Area
         this._contentArea = new St.BoxLayout({

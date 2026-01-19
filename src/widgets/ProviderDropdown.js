@@ -37,7 +37,7 @@ const ProviderDropdown = GObject.registerClass(
                 }
             );
 
-            // Button Container
+            // Button Container - styled like a native combo box
             this._providerBtn = new St.Button({
                 style_class: 'ai-usage-provider-button',
                 can_focus: true,
@@ -45,24 +45,35 @@ const ProviderDropdown = GObject.registerClass(
                 y_align: Clutter.ActorAlign.CENTER
             });
 
-            // Button Layout: [ Label (Expand) ... Icon ]
+            // Button Layout: [ Icon ... Label (Center) ... Icon ]
             let providerBtnLayout = new St.BoxLayout({
-                x_expand: true
+                x_expand: true,
+                style_class: 'ai-usage-provider-button-layout'
+            });
+
+            // Left chevron icon (for native feel)
+            let leftChevron = new St.Icon({
+                icon_name: 'pan-start-symbolic',
+                style_class: 'ai-usage-provider-chevron'
             });
 
             this._providerLabel = new St.Label({
                 text: Locale.gettext('Select Provider'),
                 y_align: Clutter.ActorAlign.CENTER,
-                x_expand: true
+                x_align: Clutter.ActorAlign.CENTER,
+                x_expand: true,
+                style_class: 'ai-usage-provider-label'
             });
 
-            let arrowIcon = new St.Icon({
-                icon_name: 'pan-down-symbolic',
-                style_class: 'popup-menu-icon'
+            // Right chevron icon
+            let rightChevron = new St.Icon({
+                icon_name: 'pan-end-symbolic',
+                style_class: 'ai-usage-provider-chevron'
             });
 
+            providerBtnLayout.add_child(leftChevron);
             providerBtnLayout.add_child(this._providerLabel);
-            providerBtnLayout.add_child(arrowIcon);
+            providerBtnLayout.add_child(rightChevron);
             this._providerBtn.set_child(providerBtnLayout);
 
             this._providerBtn.connect('clicked', () => {
@@ -77,7 +88,7 @@ const ProviderDropdown = GObject.registerClass(
                 }
             });
 
-            // Dropdown Area (Hidden by default)
+            // Dropdown Area (Hidden by default) - styled like native menu
             this._dropdownBox = new St.BoxLayout({
                 vertical: true,
                 visible: false,
@@ -93,7 +104,9 @@ const ProviderDropdown = GObject.registerClass(
                 });
                 let itemLabel = new St.Label({
                     text: this._providers[key].name,
-                    x_align: Clutter.ActorAlign.START
+                    x_align: Clutter.ActorAlign.START,
+                    y_align: Clutter.ActorAlign.CENTER,
+                    style_class: 'ai-usage-dropdown-item-label'
                 });
                 itemBtn.set_child(itemLabel);
 

@@ -31,7 +31,7 @@
     color: #cccccc;
 }
 
-/* New Styles */
+/* Header Bar - Symmetric layout with centered provider */
 .ai-usage-header-box {
     padding: 8px;
     spacing: 8px;
@@ -53,56 +53,95 @@
     opacity: 0.4;
 }
 
+/* Provider Button - Native GTK combo box style */
 .ai-usage-provider-button {
-    background-color: rgba(255, 255, 255, 0.05);
-    border-radius: 8px;
-    padding: 4px 12px;
+    background-color: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: 6px;
+    padding: 6px 12px;
+    transition: background-color 0.2s, border-color 0.2s;
 }
 .ai-usage-provider-button:hover {
-    background-color: rgba(255, 255, 255, 0.1);
+    background-color: rgba(255, 255, 255, 0.15);
+    border-color: rgba(255, 255, 255, 0.25);
+}
+.ai-usage-provider-button:active {
+    background-color: rgba(255, 255, 255, 0.12);
 }
 .ai-usage-provider-button-open {
-    border-radius: 8px 8px 0 0;
-    background-color: rgba(255, 255, 255, 0.1);
+    border-radius: 6px 6px 0 0;
+    background-color: rgba(255, 255, 255, 0.15);
+    border-color: rgba(255, 255, 255, 0.25);
+    border-bottom-color: rgba(255, 255, 255, 0.05);
 }
 
+.ai-usage-provider-button-layout {
+    spacing: 6px;
+}
+
+.ai-usage-provider-label {
+    font-size: 0.95em;
+    font-weight: 500;
+    color: #eeeeee;
+    text-align: center;
+}
+
+.ai-usage-provider-chevron {
+    icon-size: 14px;
+    color: rgba(255, 255, 255, 0.6);
+}
+
+.ai-usage-provider-button:hover .ai-usage-provider-chevron {
+    color: rgba(255, 255, 255, 0.9);
+}
+
+.ai-usage-provider-button-disabled {
+    background-color: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 6px;
+    padding: 6px 12px;
+    opacity: 0.5;
+}
+
+.ai-usage-provider-button-disabled .ai-usage-provider-label {
+    color: rgba(255, 255, 255, 0.5);
+}
+
+/* Dropdown Box - Native menu style */
 .ai-usage-dropdown-box {
     margin: 0;
-    background-color: rgba(255, 255, 255, 0.1);
-    border-radius: 0 0 8px 8px;
-    border: none;
+    background-color: rgba(30, 30, 30, 0.98);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-top: none;
+    border-radius: 0 0 6px 6px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
 }
 
 .ai-usage-dropdown-item {
-    padding: 6px 12px;
+    padding: 8px 16px;
     border-radius: 0;
     margin: 0;
     background-color: transparent;
+    border: none;
+    transition: background-color 0.15s;
 }
 .ai-usage-dropdown-item:first-child {
-    border-top: 1px solid rgba(255, 255, 255, 0.05);
+    border-top: none;
 }
 .ai-usage-dropdown-item:last-child {
-    border-radius: 0 0 8px 8px;
+    border-radius: 0 0 6px 6px;
 }
 .ai-usage-dropdown-item:hover {
     background-color: rgba(255, 255, 255, 0.1);
 }
-.ai-usage-dropdown-item StLabel {
+.ai-usage-dropdown-item:active {
+    background-color: rgba(255, 255, 255, 0.15);
+}
+
+.ai-usage-dropdown-item-label {
     font-size: 0.9em;
-}
-
-.ai-usage-provider-button {
-    background-color: rgba(255, 255, 255, 0.05);
-    border-radius: 8px 8px 0 0; /* Match dropdown rounding when open? No, keep 8 unless we dynamically change. Let's keep 8 and just fix the gap. */
-    padding: 4px 12px;
-}
-
-.ai-usage-provider-button-disabled {
-    background-color: rgba(255, 255, 255, 0.02);
-    border-radius: 8px;
-    padding: 4px 12px;
-    opacity: 0.6;
+    font-weight: normal;
+    color: #eeeeee;
 }
 
 .ai-usage-provider-dropdown-container {
