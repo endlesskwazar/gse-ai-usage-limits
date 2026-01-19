@@ -138,6 +138,50 @@ import * as PanelMenu from 'resource:///org/gnome/shell/ui/panelMenu.js';
 import ApiService from './services/ApiService.js';
 ```
 
+### CSS Styling Conventions
+
+- **Extension-specific prefix**: All CSS class names must use the `ai-usage-` prefix
+- **Purpose**: Prevents style conflicts with other GNOME Shell extensions and core GNOME Shell styles
+- **Pattern**: `.ai-usage-{descriptive-name}` (e.g., `.ai-usage-progress-label`, `.ai-usage-provider-button`)
+
+#### Why CSS Namespacing Matters
+
+GNOME Shell loads all extension stylesheets into the same global CSS context. Without a unique prefix, generic class names could unintentionally override styles from:
+- Other extensions
+- GNOME Shell's core styles
+- User themes
+
+#### Examples
+
+```css
+/* ✅ Correct - namespaced */
+.ai-usage-progress-label { font-size: 16px; }
+.ai-usage-provider-button { background-color: rgba(255, 255, 255, 0.08); }
+.ai-usage-dropdown-box { border-radius: 6px; }
+
+/* ❌ Incorrect - could conflict */
+.progress-label { font-size: 16px; }
+.button { background-color: transparent; }
+```
+
+#### Applying CSS Classes in JavaScript
+
+```javascript
+// Add the namespaced class to widgets
+this.add_style_class_name('ai-usage-main-container');
+this.add_style_class_name('ai-usage-progress-label');
+```
+
+#### Naming Guidelines
+
+| Practice | Example | Purpose |
+|----------|---------|---------|
+| **Extension prefix** | `ai-usage-` | Unique namespace |
+| **Descriptive suffix** | `-progress-label`, `-provider-button` | Clear purpose |
+| **Consistent casing** | kebab-case throughout | Matches GNOME conventions |
+
+The `ai-usage-` prefix is derived from the extension's purpose (AI Usage Limits) and is chosen for its brevity, descriptiveness, and low likelihood of conflicts with other extensions.
+
 ## Development Workflow
 
 1. **Make code changes**
