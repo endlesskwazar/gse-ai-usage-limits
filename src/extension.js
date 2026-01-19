@@ -26,9 +26,6 @@ export default class AIUsageExtension extends Extension {
         // Initialize API service
         this._apiService = new ApiService(this._providerStateManager);
 
-        // Initialize QuotaProcessor
-        this._quotaProcessor = new QuotaProcessor();
-
         // Create the Panel Menu Button
         this._indicator = new PanelMenu.Button(0.0, this.metadata.name, false);
         this._indicator.add_style_class_name('ai-usage-indicator');
@@ -233,7 +230,7 @@ export default class AIUsageExtension extends Extension {
 
             this._contentArea.destroy_all_children();
 
-            const processedData = this._quotaProcessor.process({
+            const processedData = QuotaProcessor.process({
                 limit: parsedData.limit,
                 used: parsedData.used,
                 renewsAt: parsedData.renewsAt
@@ -308,9 +305,6 @@ export default class AIUsageExtension extends Extension {
         if (this._providerStateManager) {
             this._providerStateManager.destroy();
             this._providerStateManager = null;
-        }
-        if (this._quotaProcessor) {
-            this._quotaProcessor = null;
         }
         this._headerBar = null;
         this._providerDropdown = null;
