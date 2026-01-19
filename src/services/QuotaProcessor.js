@@ -14,14 +14,17 @@ export default class QuotaProcessor {
      * @returns {number} returns.renewsAt - ISO string of renew date
      * @returns {number} returns.percentage - Usage as percentage (0-1)
      * @returns {number|null} returns.timeUntilRenew - Milliseconds until renew, null if cannot calculate
+     * @returns {string} returns.renewsIn - Formatted renew time (e.g., "2h 30m", "Now", or empty string)
      */
     process({ limit, used, renewsAt }) {
+        const timeUntilRenew = this._calculateTimeUntilRenew(renewsAt);
         return {
             limit,
             used,
             renewsAt,
             percentage: this._calculatePercentage(used, limit),
-            timeUntilRenew: this._calculateTimeUntilRenew(renewsAt)
+            timeUntilRenew,
+            renewsIn: this._formatRenewsIn(timeUntilRenew, used)
         };
     }
 
@@ -43,5 +46,17 @@ export default class QuotaProcessor {
         }
 
         return renewsDate - new Date();
+    }
+
+    _formatRenewsIn(timeUntilRenew, used) {
+        if (timeUntilRenew === null || used === 0) {
+            return '';
+        }
+        if (timeUntilRenew <= 0) {
+            return 'Now';
+        }
+        const diffHrs = Math.floor(timeUntilRenew / (1000 * 60 * 60));
+        const diffMins = Math.floor((timeUntilRenew % (1000 * 60 * 60)) / (1000 * 60));
+        return `${diffHrs}h ${diffMins}m`;
     }
 }

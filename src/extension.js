@@ -239,13 +239,7 @@ export default class AIUsageExtension extends Extension {
                 renewsAt: parsedData.renewsAt
             });
 
-            let renewsStr = '';
-            const timeUntilRenew = processedData.timeUntilRenew;
-            if (timeUntilRenew !== null && processedData.used > 0) {
-                const diffHrs = Math.floor(timeUntilRenew / (1000 * 60 * 60));
-                const diffMins = Math.floor((timeUntilRenew % (1000 * 60 * 60)) / (1000 * 60));
-                renewsStr = timeUntilRenew > 0 ? `${diffHrs}h ${diffMins}m` : 'Now';
-            }
+            let renewsStr = processedData.renewsIn;
 
             this._showQuotaUI(processedData.used, processedData.limit, renewsStr, processedData.percentage);
         } catch (e) {
