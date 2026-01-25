@@ -30,10 +30,15 @@ export default class ChutesProvider extends BaseProvider {
         const limit = data.quota || 0;
         const used = data.used || 0;
 
-        // Calculate next 00:00 UTC
+        const renewsAt = this._calculateRenewsAt();
+
+        return new UsageData(limit, used, renewsAt);
+    }
+
+    // Calculate next 00:00 UTC
+    _calculateRenewsAt() {
         const now = new Date();
         const nextReset = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() + 1));
-
-        return new UsageData(limit, used, nextReset.toISOString());
+        return nextReset.toISOString();
     }
 }

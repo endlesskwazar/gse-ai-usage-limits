@@ -3,6 +3,7 @@ import St from 'gi://St';
 import * as Main from 'resource:///org/gnome/shell/ui/main.js';
 import * as PopupMenu from 'resource:///org/gnome/shell/ui/popupMenu.js';
 import * as Locale from '../locale.js';
+import DestroyHelper from '../helpers/DestroyHelper.js';
 
 const ContextMenu = GObject.registerClass(
     {
@@ -52,13 +53,8 @@ const ContextMenu = GObject.registerClass(
         }
 
         destroy() {
-            if (this._menu) {
-                this._menu.destroy();
-                this._menu = null;
-            }
-            if (this._menuManager) {
-                this._menuManager = null;
-            }
+            this._menu = DestroyHelper.destroyComponent(this._menu);
+            this._menuManager = null;
             super.destroy();
         }
     }

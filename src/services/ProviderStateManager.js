@@ -1,6 +1,7 @@
 import GObject from 'gi://GObject';
 import Providers from '../providers/index.js';
 import SettingsHelper from './SettingsHelper.js';
+import DestroyHelper from '../helpers/DestroyHelper.js';
 
 /**
  * ProviderStateManager - Centralized provider state management
@@ -243,10 +244,8 @@ const ProviderStateManager = GObject.registerClass(
          * Clean up resources when the manager is no longer needed
          */
         destroy() {
-            if (this._settingsHelper && this._settingsSignalId) {
-                this._settingsHelper.disconnect(this._settingsSignalId);
-                this._settingsSignalId = null;
-            }
+            this._settingsSignalId = DestroyHelper.disconnectSignal(
+                this._settingsHelper, this._settingsSignalId);
             this._settingsHelper = null;
             this._currentProviderKey = null;
             this._providersCache = null;

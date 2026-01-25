@@ -8,6 +8,7 @@ import MainContent from './widgets/MainContent/MainContent.js';
 import ApiService from './services/ApiService.js';
 import ProviderStateManager from './services/ProviderStateManager.js';
 import QuotaProcessor from './services/QuotaProcessor.js';
+import DestroyHelper from './helpers/DestroyHelper.js';
 import * as Locale from './locale.js';
 
 export default class AIUsageExtension extends Extension {
@@ -142,63 +143,15 @@ export default class AIUsageExtension extends Extension {
     disable() {
         console.log('AIUsageExtension: disable() called');
 
-        // Safely disconnect menu signal with error handling
-        if (this._indicator && this._indicator.menu && this._menuOpenSignalId) {
-            try {
-                this._indicator.menu.disconnect(this._menuOpenSignalId);
-            } catch (e) {
-                console.log('AIUsageExtension: Signal already disconnected or invalid:', e.message);
-            }
-            this._menuOpenSignalId = null;
-        }
+        this._menuOpenSignalId = DestroyHelper.disconnectSignal(
+            this._indicator?.menu, this._menuOpenSignalId);
 
-        // Destroy components in safe order
-        if (this._mainContent) {
-            try {
-                this._mainContent.destroy();
-            } catch (e) {
-                console.log('AIUsageExtension: Error destroying mainContent:', e.message);
-            }
-            this._mainContent = null;
-        }
-
-        if (this._headerBar) {
-            try {
-                this._headerBar.destroy();
-            } catch (e) {
-                console.log('AIUsageExtension: Error destroying headerBar:', e.message);
-            }
-            this._headerBar = null;
-        }
-
-        if (this._panelIndicator) {
-            try {
-                this._panelIndicator.destroy();
-            } catch (e) {
-                console.log('AIUsageExtension: Error destroying panelIndicator:', e.message);
-            }
-            this._panelIndicator = null;
-            this._indicator = null;
-        }
-
-        if (this._apiService) {
-            try {
-                this._apiService.destroy();
-            } catch (e) {
-                console.log('AIUsageExtension: Error destroying apiService:', e.message);
-            }
-            this._apiService = null;
-        }
-
-        if (this._providerStateManager) {
-            try {
-                this._providerStateManager.destroy();
-            } catch (e) {
-                console.log('AIUsageExtension: Error destroying providerStateManager:', e.message);
-            }
-            this._providerStateManager = null;
-        }
-
+        this._mainContent = DestroyHelper.safeDestroy(this._mainContent, 'mainContent');
+        this._headerBar = DestroyHelper.safeDestroy(this._headerBar, 'headerBar');
+        this._panelIndicator = DestroyHelper.safeDestroy(this._panelIndicator, 'panelIndicator');
+        this._indicator = null;
+        this._apiService = DestroyHelper.safeDestroy(this._apiService, 'apiService');
+        this._providerStateManager = DestroyHelper.safeDestroy(this._providerStateManager, 'providerStateManager');
         this._mainLayout = null;
 
         console.log('AIUsageExtension: disable() completed');

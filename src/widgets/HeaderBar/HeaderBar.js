@@ -4,6 +4,7 @@ import St from 'gi://St';
 import SettingsButton from './SettingsButton.js';
 import ProviderDropdown from './ProviderDropdown.js';
 import RefreshButton from './RefreshButton.js';
+import DestroyHelper from '../../helpers/DestroyHelper.js';
 
 const HeaderBar = GObject.registerClass(
     {
@@ -87,30 +88,14 @@ const HeaderBar = GObject.registerClass(
         }
 
         destroy() {
-            if (this._providerStateManager && this._providerChangedSignalId) {
-                this._providerStateManager.disconnect(this._providerChangedSignalId);
-                this._providerChangedSignalId = null;
-            }
+            this._providerChangedSignalId = DestroyHelper.disconnectSignal(
+                this._providerStateManager, this._providerChangedSignalId);
+            this._currentProviderInvalidSignalId = DestroyHelper.disconnectSignal(
+                this._providerStateManager, this._currentProviderInvalidSignalId);
 
-            if (this._providerStateManager && this._currentProviderInvalidSignalId) {
-                this._providerStateManager.disconnect(this._currentProviderInvalidSignalId);
-                this._currentProviderInvalidSignalId = null;
-            }
-
-            if (this._settingsButton) {
-                this._settingsButton.destroy();
-                this._settingsButton = null;
-            }
-
-            if (this._providerDropdown) {
-                this._providerDropdown.destroy();
-                this._providerDropdown = null;
-            }
-
-            if (this._refreshButton) {
-                this._refreshButton.destroy();
-                this._refreshButton = null;
-            }
+            this._settingsButton = DestroyHelper.destroyComponent(this._settingsButton);
+            this._providerDropdown = DestroyHelper.destroyComponent(this._providerDropdown);
+            this._refreshButton = DestroyHelper.destroyComponent(this._refreshButton);
 
             this._providerStateManager = null;
             this._openPreferences = null;

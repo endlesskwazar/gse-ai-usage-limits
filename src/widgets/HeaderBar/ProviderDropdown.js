@@ -2,6 +2,7 @@ import Clutter from 'gi://Clutter';
 import GObject from 'gi://GObject';
 import St from 'gi://St';
 import * as Locale from '../../locale.js';
+import DestroyHelper from '../../helpers/DestroyHelper.js';
 
 const ProviderDropdown = GObject.registerClass(
     {
@@ -210,15 +211,10 @@ const ProviderDropdown = GObject.registerClass(
         }
 
         destroy() {
-            if (this._providerStateManager && this._providersUpdatedSignalId) {
-                this._providerStateManager.disconnect(this._providersUpdatedSignalId);
-                this._providersUpdatedSignalId = null;
-            }
-
-            if (this._providerStateManager && this._providerChangedSignalId) {
-                this._providerStateManager.disconnect(this._providerChangedSignalId);
-                this._providerChangedSignalId = null;
-            }
+            this._providersUpdatedSignalId = DestroyHelper.disconnectSignal(
+                this._providerStateManager, this._providersUpdatedSignalId);
+            this._providerChangedSignalId = DestroyHelper.disconnectSignal(
+                this._providerStateManager, this._providerChangedSignalId);
 
             this._providerStateManager = null;
             this._providers = null;

@@ -6,6 +6,7 @@ import * as PanelMenu from 'resource:///org/gnome/shell/ui/panelMenu.js';
 import * as PopupMenu from 'resource:///org/gnome/shell/ui/popupMenu.js';
 
 import ContextMenu from './ContextMenu.js';
+import DestroyHelper from '../helpers/DestroyHelper.js';
 
 const PanelIndicator = GObject.registerClass(
     {
@@ -142,14 +143,10 @@ const PanelIndicator = GObject.registerClass(
         }
 
         destroy() {
-            if (this._contextMenu) {
-                this._contextMenu.destroy();
-                this._contextMenu = null;
-            }
+            this._contextMenu = DestroyHelper.destroyComponent(this._contextMenu);
             if (this._indicator) {
-                this._indicator.menu.destroy();
-                this._indicator.destroy();
-                this._indicator = null;
+                DestroyHelper.destroyComponent(this._indicator.menu);
+                this._indicator = DestroyHelper.destroyComponent(this._indicator);
             }
             this._currentButton = null;
             this._openPreferencesCallback = null;
