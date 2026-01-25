@@ -143,8 +143,7 @@ export default class AIUsageExtension extends Extension {
     disable() {
         console.log('AIUsageExtension: disable() called');
 
-        this._menuOpenSignalId = DestroyHelper.disconnectSignal(
-            this._indicator?.menu, this._menuOpenSignalId);
+        this._menuOpenSignalId = DestroyHelper.disconnectSignal(this._panelIndicator, this._menuOpenSignalId);
 
         this._mainContent = DestroyHelper.safeDestroy(this._mainContent, 'mainContent');
         this._headerBar = DestroyHelper.safeDestroy(this._headerBar, 'headerBar');
