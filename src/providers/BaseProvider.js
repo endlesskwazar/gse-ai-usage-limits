@@ -3,6 +3,7 @@
  * Abstract base class defining the provider interface
  */
 import * as Locale from '../locale.js';
+import UsageData from './UsageData.js';
 
 export default class BaseProvider {
     /**
@@ -86,7 +87,7 @@ export default class BaseProvider {
      * Parse API response data
      * @param {Object} data - API response data
      * @param {Object|null} settings - GSettings object for reading preferences
-     * @returns {Object} Parsed usage data with limit, used, and renewsAt
+     * @returns {UsageData} Parsed usage data with limit, used, and renewsAt
      */
     parse(_data, _settings) {
         throw new Error('Subclass must implement parse method');

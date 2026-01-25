@@ -4,6 +4,7 @@
  */
 import * as Locale from '../locale.js';
 import BaseProvider from './BaseProvider.js';
+import UsageData from './UsageData.js';
 
 export default class NanoGptProvider extends BaseProvider {
     get id() {
@@ -59,10 +60,6 @@ export default class NanoGptProvider extends BaseProvider {
         const target = showDaily ? data.daily : data.monthly;
         const limit = (showDaily ? data.limits.daily : data.limits.monthly) || 0;
 
-        return {
-            limit: limit,
-            used: target.used,
-            renewsAt: target.resetAt
-        };
+        return new UsageData(limit, target.used, target.resetAt);
     }
 }

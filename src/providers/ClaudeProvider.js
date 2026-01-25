@@ -4,6 +4,7 @@
  */
 import * as Locale from '../locale.js';
 import BaseProvider from './BaseProvider.js';
+import UsageData from './UsageData.js';
 
 export default class ClaudeProvider extends BaseProvider {
     get id() {
@@ -90,10 +91,6 @@ export default class ClaudeProvider extends BaseProvider {
             throw new Error('Invalid format or limit type not available');
         }
 
-        return {
-            limit: 100,
-            used: target.utilization || 0,
-            renewsAt: target.resets_at || null
-        };
+        return new UsageData(100, target.utilization || 0, target.resets_at || null);
     }
 }

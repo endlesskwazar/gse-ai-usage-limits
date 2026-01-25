@@ -3,6 +3,7 @@
  * Basic AI service provider implementation
  */
 import BaseProvider from './BaseProvider.js';
+import UsageData from './UsageData.js';
 
 export default class SyntheticProvider extends BaseProvider {
     get id() {
@@ -27,11 +28,7 @@ export default class SyntheticProvider extends BaseProvider {
 
     parse(data, _settings) {
         if (data.subscription) {
-            return {
-                limit: data.subscription.limit,
-                used: data.subscription.requests,
-                renewsAt: data.subscription.renewsAt
-            };
+            return new UsageData(data.subscription.limit, data.subscription.requests, data.subscription.renewsAt);
         }
         throw new Error('Invalid format');
     }

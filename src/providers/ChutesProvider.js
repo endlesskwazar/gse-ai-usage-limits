@@ -3,6 +3,7 @@
  * Calculates next UTC midnight for renewsAt
  */
 import BaseProvider from './BaseProvider.js';
+import UsageData from './UsageData.js';
 
 export default class ChutesProvider extends BaseProvider {
     get id() {
@@ -33,10 +34,6 @@ export default class ChutesProvider extends BaseProvider {
         const now = new Date();
         const nextReset = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() + 1));
 
-        return {
-            limit: limit,
-            used: used,
-            renewsAt: nextReset.toISOString()
-        };
+        return new UsageData(limit, used, nextReset.toISOString());
     }
 }

@@ -8,6 +8,7 @@ import SyntheticProvider from './SyntheticProvider.js';
 import ChutesProvider from './ChutesProvider.js';
 import NanoGptProvider from './NanoGptProvider.js';
 import ClaudeProvider from './ClaudeProvider.js';
+import UsageData from './UsageData.js';
 
 // Register all default providers
 ProviderRegistry.register(new SyntheticProvider());
@@ -16,7 +17,15 @@ ProviderRegistry.register(new NanoGptProvider());
 ProviderRegistry.register(new ClaudeProvider());
 
 // Export classes for extensibility
-export { BaseProvider, ProviderRegistry, SyntheticProvider, ChutesProvider, NanoGptProvider, ClaudeProvider };
+export {
+    BaseProvider,
+    ProviderRegistry,
+    SyntheticProvider,
+    ChutesProvider,
+    NanoGptProvider,
+    ClaudeProvider,
+    UsageData
+};
 
 // Default export with ProviderConfig-compatible API
 export default {
