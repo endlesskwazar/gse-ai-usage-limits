@@ -54,12 +54,14 @@ export default class AIUsageExtension extends Extension {
         });
 
         this._headerBar.connect('settings-clicked', () => {
+            this._indicator.menu.close();
             this.openPreferences();
         });
 
         // Content Area
         this._mainContent = new MainContent();
         this._mainContent.connect('settings-clicked', () => {
+            this._indicator.menu.close();
             this.openPreferences();
         });
 
