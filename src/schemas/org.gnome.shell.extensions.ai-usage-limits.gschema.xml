@@ -4,36 +4,36 @@
     <key name="synthetic-api-key" type="s">
       <default>""</default>
       <summary>Synthetic API Key</summary>
-      <description>The API key for the Synthetic service.</description>
+      <description>The API key for this service.</description>
     </key>
     <key name="synthetic-enabled" type="b">
       <default>true</default>
-      <summary>Enable Synthetic Provider</summary>
-      <description>Toggle to enable/disable Synthetic provider in the menu.</description>
+      <summary>Enable Provider</summary>
+      <description>Toggle to enable/disable this provider in the menu.</description>
     </key>
     <key name="chutes-api-key" type="s">
       <default>""</default>
       <summary>Chutes.ai API Key</summary>
-      <description>The API key for the Chutes.ai service.</description>
+      <description>The API key for this service.</description>
     </key>
     <key name="chutes-enabled" type="b">
       <default>true</default>
-      <summary>Enable Chutes.ai Provider</summary>
-      <description>Toggle to enable/disable Chutes.ai provider in the menu.</description>
+      <summary>Enable Provider</summary>
+      <description>Toggle to enable/disable this provider in the menu.</description>
     </key>
     <key name="nano-gpt-api-key" type="s">
       <default>""</default>
       <summary>Nano-GPT API Key</summary>
-      <description>The API key for the Nano-GPT service.</description>
+      <description>The API key for this service.</description>
     </key>
     <key name="nano-gpt-enabled" type="b">
       <default>true</default>
-      <summary>Enable Nano-GPT Provider</summary>
-      <description>Toggle to enable/disable Nano-GPT provider in the menu.</description>
+      <summary>Enable Provider</summary>
+      <description>Toggle to enable/disable this provider in the menu.</description>
     </key>
     <key name="nano-gpt-show-daily-limit" type="b">
       <default>true</default>
-      <summary>Show Daily Limit for Nano-GPT</summary>
+      <summary>Show Daily Limit</summary>
       <description>If true, shows the daily limit (2000). If false, shows the monthly limit (60000).</description>
     </key>
     <key name="claude-oauth-token" type="s">
@@ -43,12 +43,12 @@
     </key>
     <key name="claude-enabled" type="b">
       <default>true</default>
-      <summary>Enable Claude Provider</summary>
-      <description>Toggle to enable/disable Claude provider in the menu.</description>
+      <summary>Enable Provider</summary>
+      <description>Toggle to enable/disable this provider in the menu.</description>
     </key>
     <key name="claude-limit-type" type="i">
       <default>0</default>
-      <summary>Claude Limit Type</summary>
+      <summary>Limit Type</summary>
       <description>Which limit to display: 0 = 5-hour rolling, 1 = 7-day weekly, 2 = 7-day Opus (Max plan only).</description>
     </key>
   </schema>

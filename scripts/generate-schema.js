@@ -1,13 +1,17 @@
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import { register } from 'node:module';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// Import ProviderConfig from the src directory
-const providerConfigPath = path.join(__dirname, '../src/providers/ProviderConfig.js');
-const ProviderConfig = (await import(providerConfigPath)).default;
+// Register custom loader to mock GNOME-specific modules
+register('./loader-hooks.js', import.meta.url);
+
+// Import Providers from the src directory (after hooks are registered)
+const providersPath = path.join(__dirname, '../src/providers/index.js');
+const Providers = (await import(providersPath)).default;
 
 function generateKeyXML(keyName, config) {
     const defaultVal = typeof config.default === 'string' ? `"${config.default}"` : config.default;
@@ -20,7 +24,7 @@ function generateKeyXML(keyName, config) {
 }
 
 function generateSchemaXML() {
-    const providers = ProviderConfig.getProviders();
+    const providers = Providers.getProviders();
     let xml = '<?xml version="1.0" encoding="UTF-8"?>\n';
     xml += '<schemalist gettext-domain="ai-usage-limits">\n';
     xml +=

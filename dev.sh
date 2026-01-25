@@ -3,6 +3,14 @@
 # UUID matches metadata.json
 UUID="hello-world@gse-ai-usage-limits.local"
 
+# Regenerate schema from providers
+echo "Regenerating schema from providers..."
+npm run generate-schema
+
+# Validate the generated schema
+echo "Validating schema..."
+npm run validate-schema
+
 # Install the latest changes
 ./install.sh
 
