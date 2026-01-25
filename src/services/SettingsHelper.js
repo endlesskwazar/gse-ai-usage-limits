@@ -1,4 +1,4 @@
-import ProviderConfig from '../providers/ProviderConfig.js';
+import Providers from '../providers/index.js';
 
 /**
  * SettingsHelper provides type-safe, centralized access to extension settings
@@ -25,7 +25,7 @@ export default class SettingsHelper {
      * @returns {string} The API key, or empty string if provider not found
      */
     getProviderApiKey(providerKey) {
-        const provider = ProviderConfig.getProvider(providerKey);
+        const provider = Providers.getProvider(providerKey);
         if (!provider) return '';
         return this._settings.get_string(provider.settingKey);
     }
@@ -36,7 +36,7 @@ export default class SettingsHelper {
      * @param {string} apiKey - The API key to set
      */
     setProviderApiKey(providerKey, apiKey) {
-        const provider = ProviderConfig.getProvider(providerKey);
+        const provider = Providers.getProvider(providerKey);
         if (!provider) return;
         this._settings.set_string(provider.settingKey, apiKey);
     }
@@ -47,7 +47,7 @@ export default class SettingsHelper {
      * @returns {boolean} True if the provider is enabled, false otherwise
      */
     isProviderEnabled(providerKey) {
-        const provider = ProviderConfig.getProvider(providerKey);
+        const provider = Providers.getProvider(providerKey);
         if (!provider) return false;
         return this._settings.get_boolean(provider.enabledKey);
     }
@@ -58,7 +58,7 @@ export default class SettingsHelper {
      * @param {boolean} enabled - Whether to enable the provider
      */
     setProviderEnabled(providerKey, enabled) {
-        const provider = ProviderConfig.getProvider(providerKey);
+        const provider = Providers.getProvider(providerKey);
         if (!provider) return;
         this._settings.set_boolean(provider.enabledKey, enabled);
     }
@@ -85,7 +85,7 @@ export default class SettingsHelper {
      * @returns {Object|null} Object with apiKey, enabled, hasDailyToggle, and showDailyLimit properties
      */
     getProviderSettings(providerKey) {
-        const provider = ProviderConfig.getProvider(providerKey);
+        const provider = Providers.getProvider(providerKey);
         if (!provider) return null;
         return {
             apiKey: this.getProviderApiKey(providerKey),

@@ -1,5 +1,5 @@
 import GObject from 'gi://GObject';
-import ProviderConfig from '../providers/ProviderConfig.js';
+import Providers from '../providers/index.js';
 import SettingsHelper from './SettingsHelper.js';
 
 /**
@@ -40,7 +40,7 @@ const ProviderStateManager = GObject.registerClass(
             super._init();
             this._settingsHelper = new SettingsHelper(settings);
             this._currentProviderKey = null;
-            this._providersCache = ProviderConfig.getProviders();
+            this._providersCache = Providers.getProviders();
             this._providerKeysCache = Object.keys(this._providersCache);
             this._settingsSignalId = null;
 

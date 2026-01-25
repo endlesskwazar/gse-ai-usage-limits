@@ -3,14 +3,14 @@ import Gio from 'gi://Gio';
 import GLib from 'gi://GLib';
 import Gtk from 'gi://Gtk';
 import { ExtensionPreferences } from 'resource:///org/gnome/Shell/Extensions/js/extensions/prefs.js';
-import ProviderConfig from './providers/ProviderConfig.js';
+import Providers from './providers/index.js';
 import * as Locale from './locale.js';
 
 export default class AIUsagePreferences extends ExtensionPreferences {
     fillPreferencesWindow(window) {
         Locale.init(this);
         const settings = this.getSettings();
-        const providers = ProviderConfig.getProviders();
+        const providers = Providers.getProviders();
         const providerKeys = Object.keys(providers);
 
         const page = new Adw.PreferencesPage();
