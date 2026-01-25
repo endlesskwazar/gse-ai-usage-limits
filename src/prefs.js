@@ -49,6 +49,25 @@ export default class AIUsagePreferences extends ExtensionPreferences {
     }
 
     /**
+     * Display a temporary status message on a button and restore original state after a delay
+     * Used to show feedback for async operations like credential detection
+     * @param {Gtk.Button} button - The button to display feedback on (e.g., auto-detect button)
+     * @param {string} feedbackMessage - The message to display temporarily (e.g., 'Found!', 'Not found')
+     * @param {number} duration - How long to show the feedback in milliseconds before restoring original state (default: 2000)
+     */
+    _showTemporaryFeedback(button, feedbackMessage, duration = 2000) {
+        const originalLabel = button.label;
+        button.label = feedbackMessage;
+        button.sensitive = false;
+
+        GLib.timeout_add(GLib.PRIORITY_DEFAULT, duration, () => {
+            button.label = originalLabel;
+            button.sensitive = true;
+            return GLib.SOURCE_REMOVE;
+        });
+    }
+
+    /**
      * Read OAuth token from Claude Code credentials file
      * @returns {string|null} The access token or null if not found
      */
@@ -134,23 +153,9 @@ export default class AIUsagePreferences extends ExtensionPreferences {
                 const token = this._readClaudeCredentials(provider.oauthCredentials.path);
                 if (token) {
                     settings.set_string(provider.settingKey, token);
-                    // Show success feedback
-                    autoDetectButton.label = Locale.gettext('Found!');
-                    autoDetectButton.sensitive = false;
-                    GLib.timeout_add(GLib.PRIORITY_DEFAULT, 2000, () => {
-                        autoDetectButton.label = Locale.gettext('Detect');
-                        autoDetectButton.sensitive = true;
-                        return GLib.SOURCE_REMOVE;
-                    });
+                    this._showTemporaryFeedback(autoDetectButton, Locale.gettext('Found!'));
                 } else {
-                    // Show not found feedback
-                    autoDetectButton.label = Locale.gettext('Not found');
-                    autoDetectButton.sensitive = false;
-                    GLib.timeout_add(GLib.PRIORITY_DEFAULT, 2000, () => {
-                        autoDetectButton.label = Locale.gettext('Detect');
-                        autoDetectButton.sensitive = true;
-                        return GLib.SOURCE_REMOVE;
-                    });
+                    this._showTemporaryFeedback(autoDetectButton, Locale.gettext('Not found'));
                 }
             });
 
