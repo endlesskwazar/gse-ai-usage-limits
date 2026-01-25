@@ -21,11 +21,13 @@ const MainContent = GObject.registerClass(
                 style_class: 'ai-usage-main-content'
             });
 
+            console.log('MainContent: _init() called with style class:', this.get_style_class_name());
             this._currentState = null;
             this._widgets = {};
         }
 
         showNoProviders() {
+            console.log('MainContent: showNoProviders() called');
             this.clear();
 
             const msgBox = new NoProvidersMsgBox();
@@ -39,6 +41,7 @@ const MainContent = GObject.registerClass(
         }
 
         showLoading() {
+            console.log('MainContent: showLoading() called');
             this.clear();
 
             const progressWidget = new CircularProgress(0, Locale.gettext('Loading...'));
@@ -53,6 +56,7 @@ const MainContent = GObject.registerClass(
         }
 
         showQuota(used, limit, renewsStr, percentage) {
+            console.log('MainContent: showQuota() called with percentage:', percentage);
             this.clear();
 
             const progressWidget = new CircularProgress(percentage);

@@ -131,6 +131,81 @@ export default class ProviderConfig {
                         )
                     }
                 }
+            },
+            claude: {
+                id: 'claude',
+                name: 'Claude',
+                description: Locale.pgettext('provider', 'Anthropic Claude AI service'),
+                settingKey: 'claude-oauth-token',
+                enabledKey: 'claude-enabled',
+                hasLimitTypeToggle: true,
+                limitTypeToggleKey: 'claude-limit-type',
+                // OAuth token can be auto-filled from Claude Code CLI credentials
+                oauthCredentials: {
+                    path: '.claude/.credentials.json',
+                    hint: 'OAuth token from Claude Code CLI subscription (Pro/Max). Auto-detected from ~/.claude/.credentials.json if available.'
+                },
+                url: 'https://api.anthropic.com/api/oauth/usage',
+                headers: {
+                    'anthropic-beta': 'oauth-2025-04-20',
+                    'Content-Type': 'application/json'
+                },
+                parse: (data, settings) => {
+                    // Check user preference for which limit to show
+                    // 0 = 5-hour, 1 = 7-day, 2 = 7-day Opus
+                    let limitType = 0;
+                    if (settings) {
+                        limitType = settings.get_int('claude-limit-type');
+                    }
+
+                    let target;
+                    switch (limitType) {
+                        case 1:
+                            target = data.seven_day;
+                            break;
+                        case 2:
+                            target = data.seven_day_opus;
+                            break;
+                        default:
+                            target = data.five_hour;
+                    }
+
+                    if (!target) {
+                        throw new Error('Invalid format or limit type not available');
+                    }
+
+                    // Claude returns utilization as percentage (0-100)
+                    // Convert to limit/used format where limit=100
+                    return {
+                        limit: 100,
+                        used: target.utilization || 0,
+                        renewsAt: target.resets_at || null
+                    };
+                },
+                schema: {
+                    apiKey: {
+                        type: 's',
+                        default: '',
+                        summary: Locale.gettext('Claude OAuth Token'),
+                        description: Locale.gettext(
+                            'OAuth token for Claude Code subscription. Starts with sk-ant-oat01-. Auto-detected from Claude Code CLI if installed.'
+                        )
+                    },
+                    enabled: {
+                        type: 'b',
+                        default: true,
+                        summary: Locale.gettext('Enable Claude Provider'),
+                        description: Locale.gettext('Toggle to enable/disable Claude provider in the menu.')
+                    },
+                    limitTypeToggle: {
+                        type: 'i',
+                        default: 0,
+                        summary: Locale.gettext('Claude Limit Type'),
+                        description: Locale.gettext(
+                            'Which limit to display: 0 = 5-hour rolling, 1 = 7-day weekly, 2 = 7-day Opus (Max plan only).'
+                        )
+                    }
+                }
             }
         };
     }

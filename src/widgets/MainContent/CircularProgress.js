@@ -15,6 +15,7 @@ const CircularProgress = GObject.registerClass(
             });
 
             this.add_style_class_name('ai-usage-circular-progress-container');
+            console.log('CircularProgress: Created with style class:', this.get_style_class_name());
 
             this._percentage = Math.min(Math.max(percentage, 0), 1);
             this._labelText = labelText;
@@ -28,6 +29,7 @@ const CircularProgress = GObject.registerClass(
             });
 
             this._drawingArea.connect('repaint', area => {
+                console.log('CircularProgress: repaint event fired');
                 let cr = area.get_context();
                 let [width, height] = area.get_surface_size();
                 let centerX = width / 2;

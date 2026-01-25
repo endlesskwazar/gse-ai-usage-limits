@@ -20,6 +20,7 @@ const ProviderDropdown = GObject.registerClass(
                 style_class: 'ai-usage-provider-dropdown-container'
             });
 
+            console.log('ProviderDropdown: _init() called');
             this._providerStateManager = providerStateManager;
             this._providers = providerStateManager.getProviders();
             this._currentProviderKey = null;

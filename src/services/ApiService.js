@@ -20,6 +20,7 @@ export default class ApiService {
      * @param {Object} provider - Provider configuration object
      * @param {string} provider.url - The API endpoint URL
      * @param {Function} provider.parse - Function to parse the response data
+     * @param {Object} [provider.headers] - Optional custom headers for the request
      * @param {string} providerKey - The provider key to get settings for
      * @returns {Promise<Object>} Parsed quota data with limit, used, and renewsAt properties
      */
@@ -30,6 +31,13 @@ export default class ApiService {
 
             const message = Soup.Message.new('GET', provider.url);
             message.request_headers.append('Authorization', `Bearer ${apiKey}`);
+
+            // Add any custom headers defined by the provider
+            if (provider.headers) {
+                for (const [name, value] of Object.entries(provider.headers)) {
+                    message.request_headers.append(name, value);
+                }
+            }
 
             this._session.send_and_read_async(message, GLib.PRIORITY_DEFAULT, null, (session, result) => {
                 this._handleFetchResponse(session, result, message, provider, resolve, reject);

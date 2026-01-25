@@ -39,13 +39,13 @@ function generateSchemaXML() {
         }
 
         // Daily Toggle (Nano-GPT specific)
-        if (provider.hasDailyToggle) {
-            xml += generateKeyXML(provider.dailyToggleKey, {
-                type: 'b',
-                default: true,
-                summary: 'Show Daily Limit for Nano-GPT',
-                description: 'If true, shows the daily limit (2000). If false, shows the monthly limit (60000).'
-            });
+        if (provider.hasDailyToggle && provider.schema?.dailyToggle) {
+            xml += generateKeyXML(provider.dailyToggleKey, provider.schema.dailyToggle);
+        }
+
+        // Limit Type Toggle (Claude specific)
+        if (provider.hasLimitTypeToggle && provider.schema?.limitTypeToggle) {
+            xml += generateKeyXML(provider.limitTypeToggleKey, provider.schema.limitTypeToggle);
         }
     }
 

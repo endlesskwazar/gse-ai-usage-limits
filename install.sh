@@ -14,6 +14,10 @@ fi
 mkdir -p "$DEST"
 cp -r src/* "$DEST"
 
+# Compile GSettings schema
+echo "Compiling GSettings schema..."
+glib-compile-schemas "$DEST/schemas/"
+
 echo "Installation complete!"
 echo "UUID: $UUID"
 echo ""

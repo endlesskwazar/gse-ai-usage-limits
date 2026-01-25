@@ -27,6 +27,7 @@ const PanelIndicator = GObject.registerClass(
             this._isHovered = false;
             this._isMenuOpen = false;
 
+            console.log('PanelIndicator: _init() called');
             this._setupPanelButton();
             this._setupPanelIcon();
             this._setupContextMenu();
@@ -46,6 +47,10 @@ const PanelIndicator = GObject.registerClass(
             this._indicator.menu.actor.hide();
 
             Main.panel.menuManager.addMenu(this._indicator.menu);
+            console.log(
+                'PanelIndicator: Menu created with style class:',
+                this._indicator.menu.actor.get_style_class_name()
+            );
         }
 
         _setupPanelIcon() {

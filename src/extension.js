@@ -12,6 +12,7 @@ import * as Locale from './locale.js';
 
 export default class AIUsageExtension extends Extension {
     enable() {
+        console.log('AIUsageExtension: enable() called');
         Locale.init(this);
 
         // Initialize ProviderStateManager
@@ -36,6 +37,7 @@ export default class AIUsageExtension extends Extension {
             vertical: true,
             style_class: 'ai-usage-main-container'
         });
+        console.log('AIUsageExtension: Main layout created with style class:', this._mainLayout.get_style_class_name());
 
         // Header Bar (Settings + Provider Chooser + Refresh)
         this._headerBar = new HeaderBar({
@@ -67,6 +69,7 @@ export default class AIUsageExtension extends Extension {
         this._indicator.menu.box.add_child(this._mainLayout);
 
         Main.panel.addToStatusArea(this.uuid, this._indicator);
+        console.log('AIUsageExtension: Added to status area');
 
         // Connect HeaderBar provider-changed signal to load quota
         this._headerBar.connect('provider-changed', (_headerBar, providerKey) => {
@@ -91,6 +94,8 @@ export default class AIUsageExtension extends Extension {
 
         // Initialize state - ProviderStateManager will auto-select first active provider
         this._providerStateManager.setCurrentProvider(null);
+
+        console.log('AIUsageExtension: enable() completed successfully');
     }
 
     async _loadQuota(providerKey) {
@@ -135,34 +140,67 @@ export default class AIUsageExtension extends Extension {
     }
 
     disable() {
+        console.log('AIUsageExtension: disable() called');
+
+        // Safely disconnect menu signal with error handling
         if (this._indicator && this._indicator.menu && this._menuOpenSignalId) {
-            this._indicator.menu.disconnect(this._menuOpenSignalId);
+            try {
+                this._indicator.menu.disconnect(this._menuOpenSignalId);
+            } catch (e) {
+                console.log('AIUsageExtension: Signal already disconnected or invalid:', e.message);
+            }
             this._menuOpenSignalId = null;
         }
 
+        // Destroy components in safe order
         if (this._mainContent) {
-            this._mainContent.destroy();
+            try {
+                this._mainContent.destroy();
+            } catch (e) {
+                console.log('AIUsageExtension: Error destroying mainContent:', e.message);
+            }
             this._mainContent = null;
         }
 
         if (this._headerBar) {
-            this._headerBar.destroy();
+            try {
+                this._headerBar.destroy();
+            } catch (e) {
+                console.log('AIUsageExtension: Error destroying headerBar:', e.message);
+            }
             this._headerBar = null;
         }
 
         if (this._panelIndicator) {
-            this._panelIndicator.destroy();
+            try {
+                this._panelIndicator.destroy();
+            } catch (e) {
+                console.log('AIUsageExtension: Error destroying panelIndicator:', e.message);
+            }
             this._panelIndicator = null;
             this._indicator = null;
         }
+
         if (this._apiService) {
-            this._apiService.destroy();
+            try {
+                this._apiService.destroy();
+            } catch (e) {
+                console.log('AIUsageExtension: Error destroying apiService:', e.message);
+            }
             this._apiService = null;
         }
+
         if (this._providerStateManager) {
-            this._providerStateManager.destroy();
+            try {
+                this._providerStateManager.destroy();
+            } catch (e) {
+                console.log('AIUsageExtension: Error destroying providerStateManager:', e.message);
+            }
             this._providerStateManager = null;
         }
-        this._mainContent = null;
+
+        this._mainLayout = null;
+
+        console.log('AIUsageExtension: disable() completed');
     }
 }

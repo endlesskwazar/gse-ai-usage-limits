@@ -36,5 +36,20 @@
       <summary>Show Daily Limit for Nano-GPT</summary>
       <description>If true, shows the daily limit (2000). If false, shows the monthly limit (60000).</description>
     </key>
+    <key name="claude-oauth-token" type="s">
+      <default>""</default>
+      <summary>Claude OAuth Token</summary>
+      <description>OAuth token for Claude Code subscription. Starts with sk-ant-oat01-. Auto-detected from Claude Code CLI if installed.</description>
+    </key>
+    <key name="claude-enabled" type="b">
+      <default>true</default>
+      <summary>Enable Claude Provider</summary>
+      <description>Toggle to enable/disable Claude provider in the menu.</description>
+    </key>
+    <key name="claude-limit-type" type="i">
+      <default>0</default>
+      <summary>Claude Limit Type</summary>
+      <description>Which limit to display: 0 = 5-hour rolling, 1 = 7-day weekly, 2 = 7-day Opus (Max plan only).</description>
+    </key>
   </schema>
 </schemalist>

@@ -1,5 +1,6 @@
 import Adw from 'gi://Adw';
 import Gio from 'gi://Gio';
+import GLib from 'gi://GLib';
 import Gtk from 'gi://Gtk';
 import { ExtensionPreferences } from 'resource:///org/gnome/Shell/Extensions/js/extensions/prefs.js';
 import ProviderConfig from './providers/ProviderConfig.js';
@@ -47,6 +48,39 @@ export default class AIUsagePreferences extends ExtensionPreferences {
         });
     }
 
+    /**
+     * Read OAuth token from Claude Code credentials file
+     * @returns {string|null} The access token or null if not found
+     */
+    _readClaudeCredentials(credentialsPath) {
+        try {
+            const homePath = GLib.get_home_dir();
+            const fullPath = GLib.build_filenamev([homePath, credentialsPath]);
+            const file = Gio.File.new_for_path(fullPath);
+
+            if (!file.query_exists(null)) {
+                return null;
+            }
+
+            const [success, contents] = file.load_contents(null);
+            if (!success) {
+                return null;
+            }
+
+            const decoder = new TextDecoder();
+            const json = JSON.parse(decoder.decode(contents));
+
+            if (json.claudeAiOauth && json.claudeAiOauth.accessToken) {
+                return json.claudeAiOauth.accessToken;
+            }
+
+            return null;
+        } catch (e) {
+            console.error('Failed to read Claude credentials:', e.message);
+            return null;
+        }
+    }
+
     _createProviderDialog(parent, settings, provider) {
         const dialog = new Adw.PreferencesDialog({
             title: provider.name
@@ -60,10 +94,69 @@ export default class AIUsagePreferences extends ExtensionPreferences {
         });
         page.add(group);
 
+        // Determine if this is an OAuth provider (like Claude)
+        const isOAuthProvider = !!provider.oauthCredentials;
+
+        // For OAuth providers, show hint about the token
+        if (isOAuthProvider) {
+            const hintRow = new Adw.ActionRow({
+                title: Locale.gettext('About OAuth Token'),
+                subtitle: provider.oauthCredentials.hint
+            });
+            hintRow.add_prefix(
+                new Gtk.Image({
+                    icon_name: 'dialog-information-symbolic',
+                    pixel_size: 16
+                })
+            );
+            group.add(hintRow);
+        }
+
+        // Create the token/key entry row
         const apiKeyRow = new Adw.PasswordEntryRow({
-            title: Locale.gettext('API Key')
+            title: isOAuthProvider ? Locale.gettext('OAuth Token') : Locale.gettext('API Key')
         });
         group.add(apiKeyRow);
+
+        // For OAuth providers, add auto-detect button
+        if (isOAuthProvider) {
+            const autoDetectRow = new Adw.ActionRow({
+                title: Locale.gettext('Auto-detect Token'),
+                subtitle: Locale.gettext('Read token from ~/.claude/.credentials.json')
+            });
+
+            const autoDetectButton = new Gtk.Button({
+                label: Locale.gettext('Detect'),
+                valign: Gtk.Align.CENTER
+            });
+
+            autoDetectButton.connect('clicked', () => {
+                const token = this._readClaudeCredentials(provider.oauthCredentials.path);
+                if (token) {
+                    settings.set_string(provider.settingKey, token);
+                    // Show success feedback
+                    autoDetectButton.label = Locale.gettext('Found!');
+                    autoDetectButton.sensitive = false;
+                    GLib.timeout_add(GLib.PRIORITY_DEFAULT, 2000, () => {
+                        autoDetectButton.label = Locale.gettext('Detect');
+                        autoDetectButton.sensitive = true;
+                        return GLib.SOURCE_REMOVE;
+                    });
+                } else {
+                    // Show not found feedback
+                    autoDetectButton.label = Locale.gettext('Not found');
+                    autoDetectButton.sensitive = false;
+                    GLib.timeout_add(GLib.PRIORITY_DEFAULT, 2000, () => {
+                        autoDetectButton.label = Locale.gettext('Detect');
+                        autoDetectButton.sensitive = true;
+                        return GLib.SOURCE_REMOVE;
+                    });
+                }
+            });
+
+            autoDetectRow.add_suffix(autoDetectButton);
+            group.add(autoDetectRow);
+        }
 
         const enabledRow = new Adw.SwitchRow({
             title: Locale.gettext('Enable Provider')
@@ -80,6 +173,26 @@ export default class AIUsagePreferences extends ExtensionPreferences {
             settings.bind(provider.dailyToggleKey, dailyToggleRow, 'active', Gio.SettingsBindFlags.DEFAULT);
         }
 
+        if (provider.hasLimitTypeToggle) {
+            const limitTypeModel = new Gtk.StringList();
+            limitTypeModel.append(Locale.gettext('5-hour rolling'));
+            limitTypeModel.append(Locale.gettext('7-day weekly'));
+            limitTypeModel.append(Locale.gettext('7-day Opus (Max plan)'));
+
+            const limitTypeRow = new Adw.ComboRow({
+                title: Locale.gettext('Limit Type'),
+                subtitle: Locale.gettext('Select which usage limit to display'),
+                model: limitTypeModel
+            });
+            group.add(limitTypeRow);
+
+            limitTypeRow.selected = settings.get_int(provider.limitTypeToggleKey);
+            limitTypeRow.connect('notify::selected', row => {
+                settings.set_int(provider.limitTypeToggleKey, row.selected);
+            });
+        }
+
+        // Bind API key/token to settings
         settings.bind(provider.settingKey, apiKeyRow, 'text', Gio.SettingsBindFlags.DEFAULT);
 
         const updateEnabledSwitchState = () => {
