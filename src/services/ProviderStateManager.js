@@ -222,6 +222,14 @@ const ProviderStateManager = GObject.registerClass(
         }
 
         /**
+         * Get the raw GSettings object
+         * @returns {Object} The GSettings object
+         */
+        getSettings() {
+            return this._settingsHelper.getSettings();
+        }
+
+        /**
          * Get provider names as a mapping
          * @returns {Object} Provider key to name mapping
          */

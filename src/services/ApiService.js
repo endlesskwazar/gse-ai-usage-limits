@@ -61,7 +61,7 @@ export default class ApiService {
             const response = this._parseResponse(message, bytes);
 
             // Parse provider-specific data
-            const parsedData = provider.parse(response, this._providerStateManager._settingsHelper.getSettings());
+            const parsedData = provider.parse(response, this._providerStateManager.getSettings());
             resolve(parsedData);
         } catch (error) {
             reject(error);

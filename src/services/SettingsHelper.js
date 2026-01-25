@@ -80,11 +80,11 @@ export default class SettingsHelper {
     }
 
     /**
-     * Get all settings for a specific provider
+     * Get all settings for a specific provider including UI-specific properties
      * @param {string} providerKey - The provider identifier
      * @returns {Object|null} Object with apiKey, enabled, hasDailyToggle, and showDailyLimit properties
      */
-    getProviderSettings(providerKey) {
+    getFullProviderSettings(providerKey) {
         const provider = Providers.getProvider(providerKey);
         if (!provider) return null;
         return {
